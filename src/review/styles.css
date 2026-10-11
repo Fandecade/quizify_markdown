@@ -154,7 +154,7 @@ body.ankidroid_dark_mode,
   --q-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), 0 4px 18px rgba(0, 0, 0, 0.24);
   --q-shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.28);
   --q-shadow-lift: 0 18px 44px rgba(0, 0, 0, 0.4);
-  --q-occlusion-mask: rgba(240, 246, 244, 0.14);
+  --q-occlusion-mask: rgba(10, 16, 18, 0.92);
   --q-occlusion-border: rgba(103, 214, 195, 0.7);
   --q-occlusion-revealed-border: rgba(103, 214, 195, 0.5);
   --q-occlusion-label: #f4fbf9;
@@ -338,7 +338,7 @@ body.ankidroid_dark_mode,
   --q-shadow: 0 20px 52px rgba(19, 17, 36, 0.38), 0 4px 12px rgba(19, 17, 36, 0.3);
   --q-shadow-soft: 0 8px 24px rgba(19, 17, 36, 0.3);
   --q-shadow-lift: 0 14px 34px rgba(19, 17, 36, 0.42);
-  --q-occlusion-mask: rgba(224, 232, 235, 0.14);
+  --q-occlusion-mask: rgba(9, 12, 20, 0.92);
   --q-occlusion-border: rgba(102, 169, 201, 0.72);
   --q-occlusion-revealed-border: rgba(102, 169, 201, 0.5);
   --q-occlusion-label: #eef4f6;

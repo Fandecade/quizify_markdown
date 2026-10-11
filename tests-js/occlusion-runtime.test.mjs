@@ -248,3 +248,20 @@ test("a tap reveals one region and the next tap hides it again", () => {
   assert.equal(region.classList.contains("revealed"), false);
   assert.equal(region.getAttribute("aria-pressed"), "false");
 });
+
+test("every theme keeps the occlusion mask opaque enough to hide content", async () => {
+  const css = await readFile(
+    new URL("../src/review/styles.css", import.meta.url),
+    "utf8"
+  );
+  const masks = [...css.matchAll(/--q-occlusion-mask:\s*rgba\(([^)]+)\)/g)];
+  // Light + dark for both the 开务 and 格致 skins.
+  assert.equal(masks.length, 4, "expected one mask colour per theme");
+  for (const [, args] of masks) {
+    const parts = args.split(",").map((part) => Number(part.trim()));
+    const alpha = parts[3];
+    assert.ok(alpha >= 0.8, `occlusion mask alpha ${alpha} leaves content readable`);
+  }
+  // The revealed state must clear the fill rather than keep painting the veil.
+  assert.match(css, /\.quizify-occlusion-region\.revealed \.quizify-occlusion-box\s*\{[^}]*fill:\s*transparent/);
+});
