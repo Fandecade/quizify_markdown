@@ -1,0 +1,6 @@
+*.preview.html
+*.reveal.html
+*.night.html
+_probe*.html
+static.html
+iso.html
