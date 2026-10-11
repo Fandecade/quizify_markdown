@@ -37886,7 +37886,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     }
   }
   var api = {
-    version: "1.2.2",
+    version: "2.0.0",
     boot,
     destroy,
     enhanceOutlineLists,

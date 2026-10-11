@@ -48,6 +48,7 @@ PACKAGE_MEMBERS = frozenset(
         "media-manifest.json",
         "media.py",
         "notetype.py",
+        "occlusion_tool.py",
         "package.json",
         "settings.py",
         "templates/back.html",
@@ -59,6 +60,7 @@ PACKAGE_MEMBERS = frozenset(
         "web/editor-preview.js",
         "web/editor.css",
         "web/editor.js",
+        "web/occlusion-tool.html",
         "web/syntax-tools.js",
     }
 )

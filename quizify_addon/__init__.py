@@ -273,6 +273,11 @@ def on_editor_load_note(editor: Editor) -> None:
 
 
 def on_js_message(handled, message: str, context):
+    from .occlusion_tool import handle_tool_message
+
+    handled, result = handle_tool_message(handled, message)
+    if handled:
+        return result
     return handle_reviewer_message(handled, message, context, mw)
 
 
@@ -286,6 +291,9 @@ def add_menu() -> None:
     import_action = QAction(tr("menu.import_markdown"), mw)
     import_action.triggered.connect(lambda _=False: show_markdown_import())
     submenu.addAction(import_action)
+    occlusion_action = QAction(tr("menu.occlusion_tool"), mw)
+    occlusion_action.triggered.connect(lambda _=False: show_occlusion_tool())
+    submenu.addAction(occlusion_action)
     submenu.addSeparator()
     settings_action = QAction(tr("menu.settings"), mw)
     settings_action.triggered.connect(lambda _=False: show_settings())
@@ -303,6 +311,12 @@ def show_markdown_import() -> None:
     from .importer.dialog import show_import_dialog
 
     show_import_dialog()
+
+
+def show_occlusion_tool() -> None:
+    from .occlusion_tool import show_occlusion_tool as show
+
+    show()
 
 
 def _show_warning(message: str) -> None:

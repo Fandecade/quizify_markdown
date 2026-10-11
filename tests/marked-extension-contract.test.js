@@ -42,6 +42,7 @@ const lexer = {
 const samples = {
   githubAlert: "> [!WARNING]\n> Watch out.\n",
   recite: ":::: recite mask=40\nRemember this.\n::::\n",
+  imageOcclusion: ":::: occlusion url=\"map.png\"\n1. 10,10,30,20 Label\n::::\n",
   collapse: "::: Details\nBody\n:::\n",
   tabs: "=== One\nFirst\n=== Two\nSecond\n===\n",
   annotation: "[term]^(note)^",

@@ -42,6 +42,7 @@ EXPECTED_PACKAGE_MEMBERS = {
     "locales/ru.json",
     "locales/zh-CN.json",
     "notetype.py",
+    "occlusion_tool.py",
     "package.json",
     "settings.py",
     "templates/back.html",
@@ -53,6 +54,7 @@ EXPECTED_PACKAGE_MEMBERS = {
     "web/editor-preview.js",
     "web/editor.css",
     "web/editor.js",
+    "web/occlusion-tool.html",
     "web/syntax-tools.js",
 }
 
@@ -85,7 +87,7 @@ class PackageTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertEqual(manifest["human_version"], version)
         self.assertEqual(manifest["min_point_version"], 250900)
-        self.assertEqual(manifest["mod"], 2026082902)
+        self.assertEqual(manifest["mod"], 2026090101)
         self.assertEqual(project["version"], version)
         self.assertEqual(lock["version"], version)
         self.assertEqual(lock["packages"][""]["version"], version)

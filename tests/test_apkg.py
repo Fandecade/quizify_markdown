@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import tempfile
 import unittest
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -58,6 +59,48 @@ class ApkgBuilderTest(unittest.TestCase):
         self.assertGreaterEqual(len(builder.SAMPLES), 5)
         for marker in (";;;", "{{", "$$", "```", ":::", "===", "[[", "> "):
             self.assertIn(marker, combined, marker)
+        self.assertIn(":::: recite", combined)
+        self.assertIn(":::: occlusion", combined)
+        self.assertIn("_quizify-occlusion-sample.png", combined)
+
+    def test_sample_deck_ships_the_media_every_card_references(self):
+        shipped = {path.name for path in builder.extra_assets()}
+        self.assertIn("_quizify-occlusion-sample.png", shipped)
+        self.assertIn("_quizify-sample.png", shipped)
+        self.assertIn("_quizify-sample.mp3", shipped)
+
+        # Every media filename mentioned by a sample card must be packaged.
+        combined = "\n".join(front + back for front, back in builder.SAMPLES)
+        referenced = set(re.findall(r"_[\w.-]+\.(?:png|jpg|jpeg|gif|svg|mp3|m4a|ogg|wav)", combined))
+        self.assertTrue(referenced, "sample cards should reference bundled media")
+        self.assertEqual(referenced - shipped, set())
+
+    def test_occlusion_sample_regions_stay_inside_the_image(self):
+        combined = "\n".join(front for front, _ in builder.SAMPLES)
+        blocks = re.findall(r"::::[ \t]+occlusion[^\n]*\n(.*?)\n::::", combined, re.S)
+        self.assertTrue(blocks, "the sample deck should include occlusion blocks")
+        region_line = re.compile(
+            r"^\s*(\d+)\.\s*(-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)\s*(.*)$"
+        )
+        checked = 0
+        for block in blocks:
+            for line in block.splitlines():
+                if not line.strip():
+                    continue
+                match = region_line.match(line)
+                # A block may also carry an image or a caption; only lines that
+                # look like `<number>. x,y,w,h` are treated as regions.
+                if not re.match(r"^\s*\d+\s*\.", line):
+                    continue
+                self.assertIsNotNone(match, f"not a valid region line: {line!r}")
+                _, x, y, w, h, _label = match.groups()
+                x, y, w, h = (float(value) for value in (x, y, w, h))
+                self.assertGreater(w, 0)
+                self.assertGreater(h, 0)
+                self.assertLessEqual(x + w, 100.0001)
+                self.assertLessEqual(y + h, 100.0001)
+                checked += 1
+        self.assertGreaterEqual(checked, 5)
 
     def test_scan_block_lists_every_asset_for_the_media_scanner(self):
         assets = builder.package_assets()
@@ -123,6 +166,10 @@ class ApkgBuildTest(unittest.TestCase):
                 self.assertIn("_quizify.js", media)
                 self.assertIn("_quizify.css", media)
                 self.assertTrue(any("katex" in name for name in media))
+                self.assertIn("_quizify-occlusion-sample.png", media)
+                notes = col.db.all("select flds from notes")
+                joined = "\n".join(row[0] for row in notes)
+                self.assertIn(":::: occlusion", joined)
                 self.assertEqual(
                     col.db.scalar("select count(*) from notes"), len(builder.SAMPLES)
                 )
