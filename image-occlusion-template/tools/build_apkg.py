@@ -30,6 +30,7 @@ MEDIA_DIR = ROOT / "media"
 DEFAULT_OUTPUT = ROOT / "dist" / "image-occlusion-quizify.apkg"
 
 NOTE_TYPE_NAME = "Image Occlusion (Quizify)"
+FIELD_ORDER = ("Question", "Image", "Opinions", "Answer", "Note")
 DECK_NAME = "图片遮挡 · Quizify"
 DECK_DESCRIPTION = (
     "Quizify 图片遮挡示例牌组（开务主题 + 绿色遮罩）：正面点击绿色遮罩逐块揭示，"
@@ -84,9 +85,13 @@ def build_collection(col, with_samples: bool) -> None:
     models = col.models
     model = models.new(NOTE_TYPE_NAME)
 
-    for field_name in ("Question", "Image", "Opinions", "Answer", "Note"):
+    # Every field stays in Anki's visual (rich text) editor. A plain-text field
+    # opens in the HTML *source* editor instead, where pasting a picture inserts
+    # nothing usable -- the ``Image`` field looks like it refuses images even
+    # though the note type is fine. Stock note types leave this flag alone too.
+    for field_name in FIELD_ORDER:
         field = models.new_field(field_name)
-        field["plainText"] = True
+        field["plainText"] = False
         models.add_field(model, field)
 
     template = models.new_template("Quizify 遮挡")
@@ -140,6 +145,22 @@ def verify_package(apkg: Path, expected_notes: int, assets: list[Path]) -> None:
             )
             notes = probe.db.scalar("select count(*) from notes")
             landed = set(os.listdir(probe.media.dir()))
+            notetype = probe.models.by_name(NOTE_TYPE_NAME)
+            if notetype is None:
+                raise RuntimeError(f"package has no note type {NOTE_TYPE_NAME!r}")
+            fields = {field["name"]: field for field in notetype["flds"]}
+            missing_fields = [name for name in FIELD_ORDER if name not in fields]
+            if missing_fields:
+                raise RuntimeError("package is missing fields: " + ", ".join(missing_fields))
+            # A plain-text field opens in the HTML source editor and silently
+            # swallows pasted/dragged pictures -- the exact bug this guard
+            # exists to catch.
+            plain = [name for name in FIELD_ORDER if fields[name]["plainText"]]
+            if plain:
+                raise RuntimeError(
+                    "fields are plain text, so image pasting breaks: "
+                    + ", ".join(plain)
+                )
         finally:
             probe.close()
 
@@ -223,6 +244,7 @@ def main(argv: list[str] | None = None) -> int:
         assets=assets,
     )
 
+    print("fields: visual editor (pasting images into Image works)")
     print(f"media embedded: {len(assets)}")
     if not args.no_samples:
         print(f"sample notes: {len(samples())}")
