@@ -62,7 +62,8 @@ import {
     "collapse",
     "tabs",
     "audio",
-    "recite"
+    "recite",
+    "occlusion"
   ]);
   let validationTimer = null;
   let toolbarResizeObserver = null;
@@ -643,6 +644,9 @@ import {
     if (item.kind === "audio") return `${meta.title} -> ${meta.url}`;
     if (item.kind === "recite") {
       return t("editor.preview_meta.recite", { mask: meta.mask, mode: meta.mode });
+    }
+    if (item.kind === "occlusion") {
+      return t("editor.preview_meta.occlusion", { image: meta.image, regions: meta.regions });
     }
     if (item.kind === "collapse" || item.kind === "tab") return meta.title;
     return "";

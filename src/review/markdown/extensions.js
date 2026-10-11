@@ -11,6 +11,10 @@ import {
   matchMathDelimiter
 } from "../../shared/math.js";
 import { createParserTools } from "./parsers.js";
+import {
+  formatOcclusionNumber,
+  sortOcclusionRegions
+} from "../../shared/occlusion.js";
 import { t } from "../../shared/i18n.js";
 import { iconSvg } from "../../shared/icons.js";
 
@@ -389,6 +393,7 @@ export function createMarkdownTools(state) {
     nextName,
     parseChoiceBlock,
     parseChoiceOptions,
+    parseOcclusionBlock,
     parseReciteBlock,
     parseReciteOptions,
     parseTabsBlock,
@@ -490,6 +495,78 @@ export function createMarkdownTools(state) {
           `<aside class="markdown-alert markdown-alert-${token.kind}">` +
           `<p class="markdown-alert-title">${iconSvg(alertIcon, { className: "markdown-alert-icon" })}${escapeHtml(token.label)}</p>` +
           `${this.parser.parse(token.tokens)}</aside>`
+        );
+      }
+    };
+
+    const imageOcclusion = {
+      name: "imageOcclusion",
+      level: "block",
+      childTokens: ["tokens"],
+      start(src) {
+        return regexStart(src, /^::::[ \t]+occlusion(?:[ \t]|$)/im);
+      },
+      tokenizer(src) {
+        const parsed = parseOcclusionBlock(src, this.lexer);
+        if (!parsed) return;
+        return { type: "imageOcclusion", ...parsed };
+      },
+      renderer(token) {
+        const caption = token.tokens?.length
+          ? `<figcaption class="quizify-occlusion-caption">${this.parser.parse(token.tokens)}</figcaption>`
+          : "";
+        const regions = sortOcclusionRegions(token.regions || []);
+        const shapes = regions
+          .map((region, index) => {
+            const label = (region.label || "").trim();
+            const mark = label
+              ? `<text class="quizify-occlusion-label" x="${formatOcclusionNumber(
+                  region.x + region.width / 2
+                )}" y="${formatOcclusionNumber(
+                  region.y + region.height / 2
+                )}" text-anchor="middle" dominant-baseline="central">${escapeHtml(
+                  label
+                )}</text>`
+              : "";
+            return (
+              `<g class="quizify-occlusion-region" role="button" tabindex="0" data-order="${escapeAttr(
+                region.order
+              )}" aria-label="${escapeAttr(
+                t("review.occlusion.region", {
+                  order: index + 1,
+                  label: label || region.order
+                })
+              )}">` +
+              `<rect class="quizify-occlusion-box" x="${formatOcclusionNumber(
+                region.x
+              )}" y="${formatOcclusionNumber(region.y)}" width="${formatOcclusionNumber(
+                region.width
+              )}" height="${formatOcclusionNumber(region.height)}" rx="0.6" ry="0.6"></rect>` +
+              `<g class="quizify-occlusion-content">${mark}</g>` +
+              "</g>"
+            );
+          })
+          .join("");
+        const image = token.url
+          ? `<img class="quizify-occlusion-image" src="${escapeAttr(
+              token.url
+            )}" alt="${escapeAttr(token.alt || "")}" draggable="false">`
+          : "";
+        const overlay = token.url
+          ? `<svg class="quizify-occlusion-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="false">${shapes}</svg>`
+          : "";
+        if (!token.url) {
+          return (
+            '<p class="quizify-occlusion-missing">' +
+            escapeHtml(t("review.occlusion.missing_image")) +
+            "</p>"
+          );
+        }
+        return (
+          `<figure class="quizify-occlusion" data-count="${regions.length}">` +
+          `<div class="quizify-occlusion-frame">${image}${overlay}</div>` +
+          caption +
+          "</figure>"
         );
       }
     };
@@ -1063,6 +1140,7 @@ export function createMarkdownTools(state) {
 
     return [
       githubAlert,
+      imageOcclusion,
       recite,
       collapse,
       tabs,
@@ -1092,6 +1170,7 @@ export function createMarkdownTools(state) {
     markerStart,
     parseChoiceBlock,
     parseChoiceOptions,
+    parseOcclusionBlock,
     parseReciteBlock,
     parseReciteOptions,
     parseTabsBlock,

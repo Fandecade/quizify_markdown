@@ -144,7 +144,8 @@ export function placeholderSelection(value, preferred = null) {
     /^:::\s+(.+)$/m,
     /^===\s+(.+)$/m,
     /!audio\[([^\]]+)\]/,
-    /^::::\s+recite[^\n]*\n([^\n]+)/m
+    /^::::\s+recite[^\n]*\n([^\n]+)/m,
+    /^::::\s+occlusion[^\n]*url="([^"]+)"/m
   ].map((pattern) => pattern.exec(source)?.[1]).find(Boolean);
   if (!content) return null;
   const start = source.indexOf(content);

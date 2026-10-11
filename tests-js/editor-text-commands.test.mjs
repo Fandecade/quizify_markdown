@@ -20,7 +20,8 @@ test("Quizify snippets apply selected text to every primary authoring slot", () 
     ["::: 标题\n内容\n:::\n", "标题", "::: 北京\n内容\n:::\n"],
     ["=== 标签一\n内容一\n=== 标签二\n内容二\n===\n", "标签一", "=== 北京\n内容一\n=== 标签二\n内容二\n===\n"],
     ["!audio[标题](文件名.mp3)", "标题", "!audio[北京](文件名.mp3)"],
-    [":::: recite mask=40 mode=mixed\n需要背诵的内容，%%这个短语%%会作为一个整体。\n::::\n", "需要背诵的内容", ":::: recite mask=40 mode=mixed\n北京，%%这个短语%%会作为一个整体。\n::::\n"]
+    [":::: recite mask=40 mode=mixed\n需要背诵的内容，%%这个短语%%会作为一个整体。\n::::\n", "需要背诵的内容", ":::: recite mask=40 mode=mixed\n北京，%%这个短语%%会作为一个整体。\n::::\n"],
+    [":::: occlusion url=\"文件名.png\"\n1. 10,10,30,20\n2. 45,50,30,20\n::::\n", "文件名.png", ":::: occlusion url=\"北京\"\n1. 10,10,30,20\n2. 45,50,30,20\n::::\n"]
   ];
 
   for (const [template, placeholder, expected] of fixtures) {

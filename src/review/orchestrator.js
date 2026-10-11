@@ -7,6 +7,7 @@ import { createReviewStorage } from "./runtime/persistence.js";
 import { initAnnotations } from "./runtime/annotations.js";
 import { initFitb } from "./runtime/fitb.js";
 import { initRecite } from "./runtime/recite.js";
+import { initOcclusion } from "./runtime/occlusion.js";
 import { initChoices } from "./runtime/choices.js";
 import {
   activateTabPane,
@@ -431,6 +432,11 @@ import { t } from "../shared/i18n.js";
       userAnswers,
       saveUserAnswers,
       registerRevealController
+    });
+    initOcclusion({
+      root,
+      registerRevealController,
+      lifecycle: runtimeLifecycle
     });
     initRecite({
       root,

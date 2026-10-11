@@ -6,6 +6,12 @@ import {
 import {
   findDisplayMathEndOnLine
 } from "../../shared/math.js";
+import {
+  extractMarkdownImage,
+  parseOcclusionOptions,
+  parseOcclusionRegion,
+  stripFirstImage
+} from "../../shared/occlusion.js";
 
 export function createParserTools(state) {
   function readLine(src, offset) {
@@ -274,6 +280,70 @@ export function createParserTools(state) {
     };
   }
 
+  function parseOcclusionBlock(src, lexer) {
+    const opener = /^::::[ \t]+occlusion(?:[ \t]+([^\r\n]*?))?[ \t]*(?:\n|$)/i.exec(src);
+    if (!opener) return null;
+
+    let depth = 1;
+    let offset = opener[0].length;
+    let fence = null;
+    let mathEnd = -1;
+    const lines = [];
+
+    while (depth > 0 && offset < src.length) {
+      const insideMath =
+        !fence &&
+        (offset < mathEnd ||
+          ((mathEnd = validMathBlockEnd(src, offset)) > offset));
+      const entry = readLine(src, offset);
+      offset = entry.next;
+      if (insideMath) {
+        lines.push(entry.line);
+      } else if (fence) {
+        lines.push(entry.line);
+        fence = nextFence(entry.line, fence);
+      } else if (fenceMarker(entry.line)) {
+        lines.push(entry.line);
+        fence = nextFence(entry.line, fence);
+      } else if (/^::::[ \t]+occlusion(?:[ \t]|$)/i.test(entry.line)) {
+        depth++;
+        lines.push(entry.line);
+      } else if (/^::::\s*$/.test(entry.line)) {
+        depth--;
+        if (depth > 0) lines.push(entry.line);
+      } else {
+        lines.push(entry.line);
+      }
+    }
+
+    if (depth !== 0) return null;
+
+    const regions = [];
+    const contentLines = [];
+    lines.forEach((line) => {
+      const region = parseOcclusionRegion(line);
+      if (region) regions.push(region);
+      else contentLines.push(line);
+    });
+
+    const options = parseOcclusionOptions(opener[1]);
+    const contentBody = trimBlankEdges(contentLines).join("\n");
+    const embeddedImage = extractMarkdownImage(contentBody);
+    const url = options.image || embeddedImage.url;
+    const alt = options.alt || embeddedImage.alt;
+    const captionSource = url && embeddedImage.url === url
+      ? stripFirstImage(contentBody)
+      : contentBody;
+
+    return {
+      raw: src.slice(0, offset),
+      url,
+      alt,
+      regions,
+      tokens: lexer.blockTokens(trimBlankEdges(captionSource.split("\n")).join("\n"))
+    };
+  }
+
   const reciteStopWordsEn = new Set([
     "a", "an", "the", "and", "but", "or", "nor", "for", "so", "yet",
     "at", "by", "in", "of", "on", "to", "up", "with", "as", "is", "are",
@@ -383,6 +453,7 @@ export function createParserTools(state) {
     nextName,
     parseChoiceBlock,
     parseChoiceOptions,
+    parseOcclusionBlock,
     parseReciteBlock,
     parseReciteOptions,
     parseTabsBlock,

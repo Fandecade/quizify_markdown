@@ -6,6 +6,7 @@ import {
   maskMarkdownFencedCode,
   maskMarkdownInlineContexts
 } from "./math.js";
+import { parseOcclusionRegion } from "./occlusion.js";
 import { t, tn } from "./i18n.js";
 (function (root, factory) {
   const api = factory();
@@ -22,7 +23,8 @@ import { t, tn } from "./i18n.js";
     [t("editor.snippet.collapse"), t("editor.snippet.collapse.template"), t("editor.placeholder.title")],
     [t("editor.snippet.tabs"), t("editor.snippet.tabs.template"), t("editor.placeholder.tab_one")],
     [t("editor.snippet.audio"), t("editor.snippet.audio.template"), t("editor.placeholder.audio_title")],
-    [t("editor.snippet.recite"), t("editor.snippet.recite.template"), t("editor.placeholder.recite_text")]
+    [t("editor.snippet.recite"), t("editor.snippet.recite.template"), t("editor.placeholder.recite_text")],
+    [t("editor.snippet.occlusion"), t("editor.snippet.occlusion.template"), t("editor.placeholder.occlusion")]
   ];
 
   const markdownActions = [
@@ -552,34 +554,48 @@ import { t, tn } from "./i18n.js";
 
   function analyzeReciteBlocks(lines, diagnostics) {
     const stack = [];
+    const RECITE_OPTIONS = ["mask", "mode"];
+    const OCCLUSION_OPTIONS = ["url", "image", "src", "alt", "title"];
 
     lines.forEach((line, idx) => {
       const lineNo = idx + 1;
       const trimmed = line.trim();
-      const opener = /^::::\s+recite(?:\s+(.*?))?\s*$/i.exec(trimmed);
+      const opener = /^::::\s+([A-Za-z]+)(?:\s+(.*?))?\s*$/.exec(trimmed);
       if (opener) {
-        const entry = { line: lineNo, markers: 0 };
+        const kind = opener[1].toLowerCase();
+        const entry = { line: lineNo, markers: 0, kind };
         const seen = new Set();
-        String(opener[1] || "").split(/\s+/).filter(Boolean).forEach((part) => {
-          const option = /^([A-Za-z][\w-]*)=(\S+)$/.exec(part);
-          if (!option) {
-            diagnostics.push(diagnostic("warning", t("syntax.recite_invalid_option", { option: part }), lineNo));
-            return;
-          }
-          const key = option[1].toLowerCase();
-          const value = option[2].toLowerCase();
-          if (seen.has(key)) {
-            diagnostics.push(diagnostic("warning", t("syntax.recite_duplicate_option", { option: key }), lineNo));
-          }
-          seen.add(key);
-          if (key === "mask" && (!/^\d{1,3}$/.test(value) || Number(value) > 100)) {
-            diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mask"), lineNo));
-          } else if (key === "mode" && !["auto", "manual", "mixed"].includes(value)) {
-            diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mode"), lineNo));
-          } else if (!["mask", "mode"].includes(key)) {
-            diagnostics.push(diagnostic("warning", t("syntax.recite_unknown_option", { option: key }), lineNo));
-          }
+        String(opener[2] || "").split(/\s+/).filter(Boolean).forEach((part) => {
+          const option = /^([A-Za-z][\w-]*)=(?:\S+)$/.exec(part);
+          if (!option) return;
+          seen.add(option[1].toLowerCase());
         });
+        if (kind === "recite") {
+          String(opener[2] || "").split(/\s+/).filter(Boolean).forEach((part) => {
+            const option = /^([A-Za-z][\w-]*)=(\S+)$/.exec(part);
+            if (!option) {
+              diagnostics.push(diagnostic("warning", t("syntax.recite_invalid_option", { option: part }), lineNo));
+              return;
+            }
+            const key = option[1].toLowerCase();
+            const value = option[2].toLowerCase();
+            if (key === "mask" && (!/^\d{1,3}$/.test(value) || Number(value) > 100)) {
+              diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mask"), lineNo));
+            } else if (key === "mode" && !["auto", "manual", "mixed"].includes(value)) {
+              diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mode"), lineNo));
+            } else if (!RECITE_OPTIONS.includes(key)) {
+              diagnostics.push(diagnostic("warning", t("syntax.recite_unknown_option", { option: key }), lineNo));
+            }
+          });
+        } else if (kind === "occlusion") {
+          seen.forEach((key) => {
+            if (!OCCLUSION_OPTIONS.includes(key)) {
+              diagnostics.push(diagnostic("warning", t("syntax.occlusion_unknown_option", { option: key }), lineNo));
+            }
+          });
+        } else {
+          diagnostics.push(diagnostic("warning", t("syntax.unknown_container", { keyword: kind }), lineNo));
+        }
         stack.push(entry);
         return;
       }
@@ -590,20 +606,25 @@ import { t, tn } from "./i18n.js";
           return;
         }
         const entry = stack.pop();
-        if (entry.markers % 2 !== 0) {
+        if (entry.kind === "recite" && entry.markers % 2 !== 0) {
           diagnostics.push(diagnostic("error", t("syntax.recite_unpaired_group"), entry.line));
         }
         return;
       }
 
       if (stack.length) {
-        const count = (line.match(/%%/g) || []).length;
-        stack[stack.length - 1].markers += count;
+        const top = stack[stack.length - 1];
+        if (top.kind === "recite") {
+          top.markers += (line.match(/%%/g) || []).length;
+        } else if (top.kind === "occlusion" && /^\s*\d/.test(trimmed) && !parseOcclusionRegion(trimmed)) {
+          diagnostics.push(diagnostic("warning", t("syntax.occlusion_invalid_region"), lineNo));
+        }
       }
     });
 
     stack.forEach((entry) => {
-      diagnostics.push(diagnostic("error", t("syntax.recite_missing_close"), entry.line));
+      const key = entry.kind === "occlusion" ? "syntax.occlusion_missing_close" : "syntax.recite_missing_close";
+      diagnostics.push(diagnostic("error", t(key), entry.line));
     });
   }
 
@@ -711,6 +732,15 @@ import { t, tn } from "./i18n.js";
       if (collapse) {
         items.push(previewItem("collapse", t("editor.snippet.collapse"), lineNo, {
           title: trimPreview(collapse[1])
+        }));
+      }
+
+      const occlusion = /^::::\s+occlusion(?:\s+(.*?))?\s*$/i.exec(line.trim());
+      if (occlusion) {
+        const url = /url\s*=\s*"([^"]+)"/i.exec(occlusion[1] || "");
+        items.push(previewItem("occlusion", t("editor.snippet.occlusion"), lineNo, {
+          image: (url && url[1]) || t("syntax.preview.no_file"),
+          regions: ""
         }));
       }
 

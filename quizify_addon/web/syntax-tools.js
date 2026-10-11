@@ -1,31 +1,1983 @@
-(()=>{function yt(t){let n=/^(?: {0,3})(`{3,}|~{3,})([^\r\n]*)$/.exec(String(t!=null?t:""));return!n||n[1][0]==="`"&&n[2].includes("`")?null:{char:n[1][0],length:n[1].length}}function wt(t,n){if(!n)return!1;let i=/^(?: {0,3})(`{3,}|~{3,})\s*$/.exec(String(t!=null?t:""));return!!(i&&i[1][0]===n.char&&i[1].length>=n.length)}function P(t,n){return n?wt(t,n)?null:n:yt(t)}function Z(t){return Array.from(new Set(String(t||"").toUpperCase().split(""))).filter(n=>/^[A-Z]$/.test(n)).sort().join("")}var Qt=Object.freeze(["en","zh-CN","ru"]),St=Object.freeze({en:Object.freeze({}),"zh-CN":Object.freeze({}),ru:Object.freeze({})});function kt(){let t=globalThis.QuizifyI18nCatalogs;return t&&typeof t=="object"?t:St}function H(t){let n=String(t||"").trim().replace(/_/g,"-").split(/[.@]/,1)[0].toLowerCase();return n==="ru"||n.startsWith("ru-")?"ru":n==="zh"||n.startsWith("zh-")?"zh-CN":(n==="en"||n.startsWith("en-"),"en")}function At(t){var i;let n=Array.from(((i=t==null?void 0:t.document)==null?void 0:i.scripts)||[]);for(let e of n.reverse())try{let r=new URL(e.src,t.document.baseURI);if(!/(?:^|\/)(?:_quizify|syntax-tools|editor(?:-preview)?)\.js$/i.test(r.pathname))continue;let l=r.searchParams.get("lang");if(l)return l}catch{}return""}function _t(t=globalThis){var r,l,o,s,p,w;let n=(t==null?void 0:t.quizifyLocale)||At(t);if(n)return H(n);let i=(o=(l=(r=t==null?void 0:t.document)==null?void 0:r.documentElement)==null?void 0:l.getAttribute)==null?void 0:o.call(l,"lang");if(i)return H(i);let e=((p=(s=t==null?void 0:t.navigator)==null?void 0:s.languages)==null?void 0:p[0])||((w=t==null?void 0:t.navigator)==null?void 0:w.language);return H(e)}var G=_t();function tt(t,n=G){var r,l,o,s;let i=H(n),e=kt();return(s=(o=(r=e[i])==null?void 0:r[t])!=null?o:(l=e.en)==null?void 0:l[t])!=null?s:t}function K(t,n={}){return String(t).replace(/\{([A-Za-z0-9_]+)\}/g,(i,e)=>Object.prototype.hasOwnProperty.call(n,e)?String(n[e]):i)}function f(t,n={},i=G){var r,l;let e=tt(t,i);return K(e&&typeof e=="object"?(l=(r=e.other)!=null?r:Object.values(e)[0])!=null?l:t:e,n)}function Ct(t,n){let i=H(t),e=Math.abs(Math.trunc(Number(n)||0));if(i==="ru"){let r=e%10,l=e%100;return r===1&&l!==11?"one":r>=2&&r<=4&&!(l>=12&&l<=14)?"few":"many"}return i==="en"&&e===1?"one":"other"}function Q(t,n,i={},e=G){var l,o,s;let r=tt(t,e);if(r&&typeof r=="object"){let p=Ct(e,n);r=(s=(o=(l=r[p])!=null?l:r.other)!=null?o:Object.values(r)[0])!=null?s:t}return K(r,{count:n,...i})}var N=Object.freeze([{left:"$$",right:"$$",display:!0},{left:"\\[",right:"\\]",display:!0},{left:"\\(",right:"\\)",display:!1},{left:"$",right:"$",display:!1}].map(Object.freeze)),et=Object.freeze(N.filter(t=>t.display));var te=16*1024,ee=32*1024;var Et=new Set("a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr svg math altglyph altglyphdef altglyphitem animate animatecolor animatemotion animatetransform circle clippath defs desc ellipse filter font font-face font-face-format font-face-name font-face-src font-face-uri g glyph glyphref hkern line lineargradient marker mask metadata mpath path pattern polygon polyline radialgradient rect set stop switch symbol text textpath tref tspan use view vkern feblend fecolormatrix fecomponenttransfer fecomposite feconvolvematrix fediffuselighting fedisplacementmap fedistantlight fedropshadow feflood fefunca fefuncb fefuncg fefuncr fegaussianblur feimage femerge femergenode femorphology feoffset fepointlight fespecularlighting fespotlight fetile feturbulence annotation annotation-xml maction maligngroup malignmark menclose merror mfenced mfrac mglyph mi mlabeledtr mlongdiv mmultiscripts mn mo mover mpadded mphantom mprescripts mroot mrow ms mscarries mscarry msgroup msline mspace msqrt msrow mstack mstyle msub msubsup msup mtable mtd mtext mtr munder munderover none semantics".split(" ")),zt=new Set("pre code script style textarea option noscript kbd title template".split(" ")),Lt=new Set("address article aside base basefont blockquote body caption center col colgroup dd details dialog dir div dl dt fieldset figcaption figure footer form frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html iframe legend li link main menu menuitem nav noframes ol optgroup option p param search section summary table tbody td tfoot th thead title tr track ul".split(" ")),nt=new WeakMap;function $t(t){let n=nt.get(t);if(!n){let i=t.map(e=>e.left.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));n=new RegExp(i.join("|"),"g"),nt.set(t,n)}return n}function rt(t,n,i=0){let e=n.find(s=>t.startsWith(s.left,i));if(e)return{index:i,delimiter:e};let r=$t(n);r.lastIndex=i;let l=r.exec(t);if(!l)return;let o=n.find(s=>l[0]===s.left);return{index:l.index,delimiter:o}}function Mt(t,n=N,i=0){var e;return(e=rt(String(t!=null?t:""),n,Math.max(0,Number(i)||0)))==null?void 0:e.index}function ot(t){let n=(t==null?void 0:t.charCodeAt(0))||0;return n>=65&&n<=90||n>=97&&n<=122}function vt(t){let n=(t==null?void 0:t.charCodeAt(0))||0;return ot(t)||n>=48&&n<=57||t==="-"}function lt(t,n,i=!0){if(t[n]!=="<")return;let e=n+1,r=!1;if(t[e]==="/"){if(!i)return;r=!0,e++}let l=e;if(!ot(t[e]))return;for(;vt(t[++e]););let o=t[e];if(!(o!=="/"&&o!==">"&&!/\s/.test(o||"")))return{name:t.slice(l,e).toLowerCase(),end:e,closing:r}}function X(t){let n=String(t!=null?t:"");if(!n.includes("<"))return;let i=3,e=0,r=1,l=2,o=new Int32Array((n.length+1)*i);for(let s=n.length-1;s>=0;s--){let p=s*i,w=p+i,x=n[s];o[p+e]=x===">"?s+1:x==="'"?o[w+r]:x==='"'?o[w+l]:o[w+e],o[p+r]=x==="'"?o[w+e]:o[w+r],o[p+l]=x==='"'?o[w+e]:o[w+l]}return{ends:o,stateCount:i}}function Ot(t,n,i){if(i)return i.ends[(n+2)*i.stateCount]||-1;let e="";for(let r=n+2;r<t.length;r++){let l=t[r];if(e)l===e&&(e="");else if(l==='"'||l==="'")e=l;else if(l===">")return r+1}return-1}function qt(t,n,i){let e=n.end;if(n.closing){for(;/\s/.test(t[e]||"");)e++;return t[e]===">"&&e+1===i}for(;e<i;){let r=!1;for(;/\s/.test(t[e]||"");)r=!0,e++;if(t[e]===">")return e+1===i;if(t[e]==="/")return t[e+1]===">"&&e+2===i;if(!r||!/[A-Za-z_:]/.test(t[e]||""))return!1;for(e++;/[A-Za-z0-9_.:-]/.test(t[e]||"");)e++;for(;/\s/.test(t[e]||"");)e++;if(t[e]!=="=")continue;for(e++;/\s/.test(t[e]||"");)e++;let l=t[e]==='"'||t[e]==="'"?t[e++]:"";if(l){for(;e<i&&t[e]!==l;)e++;if(t[e]!==l)return!1;e++}else{let o=e;for(;e<i&&!/[\s"'=<>`]/.test(t[e]||"");)e++;if(e===o)return!1}}return!1}function st(t,n,i){if(t.startsWith("<!--",n)){let l=t.indexOf("-->",n+4);return l<0?t.length:l+3}if(t.startsWith("<![CDATA[",n)){let l=t.indexOf("]]>",n+9);return l<0?t.length:l+3}let e=lt(t,n);if(e&&Et.has(e.name)){let l=Ot(t,n,i);return l<0?-1:qt(t,e,l)?l:-1}if(t.startsWith("<?",n)){let l=t.indexOf("?>",n+2);return l<0?t.length:l+2}if(/^<![A-Za-z]/.test(t.slice(n,n+64))){let l=t.indexOf(">",n+3);return l<0?t.length:l+1}return-1}function W(t,n,i){return t[n]==="<"?st(t,n,i):-1}function It(t,n,i,e){let r=String(t!=null?t:""),l=e,o=0,s=0;for(let p=i;p<r.length;p++){if(s<=0&&r.startsWith(n.right,p))return p;let w=r[p];if(!n.display&&(w===`
-`||w==="\r"))return-1;if(w==="<"){if(!l&&++o>=16&&(l=X(r)),W(r,p,l)>=0)return-1}else if(w==="\\"){if(!n.display&&(r[p+1]===`
-`||r[p+1]==="\r"))return-1;p++}else w==="{"?s++:w==="}"&&s--}return-1}function Tt(t,n,i,e){let r=0,l=!1;for(let o=i;o<t.length;o++){if(r<=0&&t.startsWith(n.right,o))return l?o:-1;let s=t[o];if(!n.display&&(s===`
-`||s==="\r"))return-1;if(s==="<"){let p=W(t,o,e);if(p>=0){l=!0,o=p-1;continue}}if(s==="\\"){if(!n.display&&(t[o+1]===`
-`||t[o+1]==="\r"))return-1;o++}else s==="{"?r++:s==="}"&&r--}return-1}function U(t,n=0,i=N,e){let r=String(t!=null?t:""),l=i.find(w=>r.startsWith(w.left,n));if(!l)return;let o=n+l.left.length;if(r.indexOf(l.right,o)<0)return;let s=It(r,l,o,e);if(s<0)return;let p=s+l.right.length;return{raw:r.slice(n,p),text:r.slice(o,s),left:l.left,right:l.right,display:l.display,index:n,end:p}}function at(t,n){let i=0,e=t.length;for(;i<e;){let r=i+e>>>1;t[r].position<n?i=r+1:e=r}return i}function F(t,n,i=X(t)){var m;let e=new Int32Array(t.length+1),r=new Uint8Array(t.length),l=0,o=0;for(let y=0;y<t.length;y++){e[y]=l,r[y]=o%2;let k=t[y];if(k==="\\"){o++;continue}r[y]||(k==="{"?l++:k==="}"&&l--),o=0}e[t.length]=l;let s=new Int32Array(t.length),p=new Uint32Array(t.length+1),w=0;for(let y=0;y<t.length;y++)p[y]=w,(t[y]===`
-`||t[y]==="\r"&&t[y+1]!==`
-`)&&w++;p[t.length]=w;let x=0,A=0;for(;A<t.length;){let y=r[A]?-1:W(t,A,i);y>=0?(s.fill(-1,A,y),A=y,x++):s[A++]=x}let C=new Map;for(let y of new Set(n.map(k=>k.right))){let k=(m=n.find(S=>S.right===y))==null?void 0:m.display,E=[],_=t.indexOf(y);for(;_>=0;)!r[_]&&s[_]>=0&&E.push({position:_,region:s[_],line:p[_],balance:e[_],suffixMin:e[_]}),_=t.indexOf(y,_+1);for(let S=E.length-2;S>=0;S--)E[S].region===E[S+1].region&&(k||E[S].line===E[S+1].line)&&(E[S].suffixMin=Math.min(E[S].balance,E[S+1].suffixMin));C.set(y,E)}return{balanceAt:e,escaped:r,regionAt:s,lineAt:p,closers:C,htmlIndex:i}}function ct(t,n,i,e=F(t,n)){let r=i;for(;r<t.length;){let l=rt(t,n,r);if(!l)return;let{delimiter:o,index:s}=l,p=e.regionAt[s];if(!e.escaped[s]&&p>=0){let w=e.closers.get(o.right)||[],x=at(w,s+o.left.length),A=w[x];if((A==null?void 0:A.region)===p&&(o.display||A.line===e.lineAt[s])&&A.suffixMin<=e.balanceAt[s]&&U(t,s,n,e.htmlIndex))return s;if(A&&A.region!==p&&(o.display||A.line===e.lineAt[s])){let C=Tt(t,o,s+o.left.length,e.htmlIndex);if(C>=0){r=C+o.right.length;continue}}}r=s+(e.escaped[s]?1:o.left.length)}}function Rt(t,n,i,e){let r=i.find(s=>t.startsWith(s.left,n));if(!r||e.escaped[n]||e.regionAt[n]<0)return;let l=e.closers.get(r.right)||[],o=l[at(l,n+r.left.length)];if(!((o==null?void 0:o.region)!==e.regionAt[n]||!r.display&&o.line!==e.lineAt[n]||o.suffixMin>e.balanceAt[n]))return U(t,n,i,e.htmlIndex)}function jt(t,n=N){let i=String(t!=null?t:""),e=F(i,n),r=[],l=0;for(;l<i.length;){let o=ct(i,n,l,e);if(o===void 0)break;let s=U(i,o,n,e.htmlIndex);r.push(s),l=s.end}return r}function ft(t,n){let i=0;for(;n>0&&t[--n]==="\\";)i++;return i%2===1}function Dt(t){var o;let n=String(t!=null?t:""),i=[],e=n.indexOf("`");for(;e>=0;){let s=e+1;for(;n[s]==="`";)s++;let p=ft(n,e);i.push({start:e,end:s,length:s-e,openerStart:e+(p?1:0),openerLength:s-e-(p?1:0)}),e=n.indexOf("`",s)}let r=new Int32Array(i.length);r.fill(-1);let l=new Map;for(let s=i.length-1;s>=0;s--){let p=i[s];p.openerLength>0&&(r[s]=(o=l.get(p.openerLength))!=null?o:-1),l.set(p.length,s)}return{runs:i,nextCloser:r}}function Nt(t,n){let i=t.runs[n],e=t.nextCloser[n];if(!(!(i!=null&&i.openerLength)||e<0))return{start:i.openerStart,end:t.runs[e].end,closerIndex:e}}function Bt(t,n=0,i=0){for(let e=i;e<t.runs.length;e++){if(t.runs[e].openerStart<n)continue;let l=Nt(t,e);if(l)return{...l,runIndex:e}}}function dt(t,n,i){let e=lt(t,n,!1);if(!e||!zt.has(e.name))return-1;let r=st(t,n,i);if(r<0)return-1;if(e.name==="option"){let s=/<\/option\s*>|<option(?=[\s>])|<\/select\s*>/ig;s.lastIndex=r;let p=s.exec(t);return p?/^<\/option/i.test(p[0])?p.index+p[0].length:p.index:t.length}let l=new RegExp(`</${e.name}\\s*>`,"ig");l.lastIndex=r;let o=l.exec(t);return o?o.index+o[0].length:t.length}function ut(t,n=X(t)){let i=String(t!=null?t:""),e=[],r=i.indexOf("<");for(;r>=0;){let l=W(i,r,n);if(l>=0){let o=dt(i,r,n),s=o>=0?o:l;e.push({start:r,end:s}),r=i.indexOf("<",s);continue}r=i.indexOf("<",r+1)}return e}function V(t){return String(t!=null?t:"").replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g,"$1").trim().replace(/\s+/g," ").toLowerCase()}function Pt(t){let n=new Set;for(let{line:i,kind:e}of mt(t)){if(e!=="plain")continue;let r=/^ {0,3}\[((?:\\.|[^\]\\]){1,999})\]:[ \t]*(?:<[^<>\r\n]+>|[^ \t\r\n<>]+)(?:[ \t]+(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|\((?:\\.|[^)\\\r\n])*\)))?[ \t]*$/.exec(i);r&&n.add(V(r[1]))}return n}function Ht(t){let n=t.length,i=new Uint8Array(n),e=0;for(let x=0;x<n;x++)i[x]=e%2,t[x]==="\\"?e++:e=0;let r=new Int32Array(n);r.fill(-1);let l=[];for(let x=0;x<n;x++)t[x]===`
-`||t[x]==="\r"?l.length=0:!i[x]&&t[x]==="("?l.push(x):!i[x]&&t[x]===")"&&l.length&&(r[l.pop()]=x);let o=new Int32Array(n+1),s=new Int32Array(n+1),p=new Int32Array(n+1),w=new Int32Array(n+1);o.fill(-1),s.fill(-1),p.fill(-1),w.fill(-1);for(let x=n-1;x>=0;x--){let A=t[x],C=!i[x],m=C&&(A==="<"||A===" "||A==="	");o[x]=C&&A===")"?x:o[x+1],s[x]=C&&(m||A==="("||A===")")?x:s[x+1],p[x]=m?x:p[x+1],w[x]=A===`
-`||A==="\r"?x:w[x+1]}return{nextBoundary:p,nextClose:o,nextLineBreak:w,nextSpecial:s,parenEnd:r}}function Wt(t,n,i){if(t[n]!=="(")return-1;let e=i.nextLineBreak[n+1],r=e<0?t.length:e,l=i.nextClose[n+1];if(l<0||l>=r)return-1;let o=n+1,s=()=>{for(;t[o]===" "||t[o]==="	";)o++};if(s(),t[o]==="<"){o++;let C=!1;for(;o<t.length;){let m=t[o];if(m===`
-`||m==="\r"||m==="<")return-1;if(m==="\\")o+=2;else if(m===">"){o++,C=!0;break}else o++}if(!C)return-1}else{let C=0;for(;o<r;){let m=i.nextSpecial[o];if(m<0||m>=r)return-1;o=m;let y=t[o];if(y==="<")return-1;if(y==="("){let k=i.parenEnd[o],E=i.nextBoundary[o+1];if(k<0||k>=r||E>=0&&E<k)return-1;C++,o=k+1,C--}else if(y===")"){if(C===0)return o+1;C--,o++}else break}if(C!==0)return-1}let p=o;if(s(),t[o]===")")return o+1;if(o===p)return-1;let w=t[o],x=w==='"'?'"':w==="'"?"'":w==="("?")":"";if(!x)return-1;o++;let A=!1;for(;o<t.length;){let C=t[o];if(C===`
-`||C==="\r")return-1;if(C==="\\")o+=2;else if(C===x){o++,A=!0;break}else o++}return A?(s(),t[o]===")"?o+1:-1):-1}function Zt(t,n){if(t[n]==="[")for(let i=n+1;i<t.length;i++){if(t[i]===`
-`||t[i]==="\r")return;if(t[i]==="\\")i++;else{if(t[i]==="]")return{end:i+1,label:t.slice(n+1,i)};if(t[i]==="[")return}}}function Xt(t,n=new Set){let i=String(t!=null?t:""),e=Ht(i),r=[],l=[];function o(s,p){var k,E,_;let w=i.slice(s,p),x=[];for(let S of jt(w))x.push({start:S.index,end:S.end});let A=/\[\[(.*?)\|\|(.*?)\]\]/g,C;for(;C=A.exec(w);)x.push({start:C.index,end:C.index+C[0].length});x.sort((S,j)=>S.start-j.start||j.end-S.end);let m=0,y=0;for(let S=0;S<w.length;S++){for(;((k=x[m])==null?void 0:k.end)<=S;)m++;if(((E=x[m])==null?void 0:E.start)<=S&&S<((_=x[m])==null?void 0:_.end)){S=x[m].end-1;continue}if(w[S]==="\\")S++;else if(w[S]==="["){if(++y>1)return!1}else if(w[S]==="]"&&y--<=0)return!1}return y===0}for(let s=0;s<i.length;s++){if(i[s]==="\\"){s++;continue}if(i[s]==="["){l.push(s);continue}if(i[s]!=="]"||!l.length)continue;let p=l.pop();if(i.slice(Math.max(0,p-6),p)==="!audio")continue;let w=p>0&&i[p-1]==="!"&&!ft(i,p-1),x=w?p-1:p,A=Wt(i,s+1,e);if(A<0){let C=Zt(i,s+1);if(C){let m=C.label||i.slice(p+1,s);n.has(V(m))&&(A=C.end)}else i[s+1]!==":"&&n.has(V(i.slice(p+1,s)))&&(A=s+1)}A>=0&&o(p+1,s)&&(r.push({kind:"link",start:x,end:A,labelStart:p+1,labelEnd:s,image:w}),s=A-1)}return r.sort((s,p)=>s.start-p.start||p.end-s.end)}function ht(t,n=[],i=new Set,e=!0){var I,M,v;let r=String(t!=null?t:""),o=Mt(r)!==void 0?F(r,N):null,s=r.includes("`")?Dt(r):null,p=e?Xt(r,i):[],w=n.map(c=>({start:c.start,end:c.end})).sort((c,h)=>c.start-h.start||h.end-c.end),x=[],A=[],C=[],m=[],y=0,k=0,E=0,_=0,S,j=!1;function q(c){m.push(c),c.kind==="math"?x.push(c):c.kind==="code"?A.push(c):C.push(c)}for(;_<r.length;){for(;((I=w[y])==null?void 0:I.start)<_;)y++;for(;((M=p[E])==null?void 0:M.start)<_;)E++;if((S==null?void 0:S.index)<_&&(S=void 0),o&&!S&&!j){let b=ct(r,N,_,o);b===void 0?j=!0:S=U(r,b,N,o.htmlIndex)}let c=S;for(;((v=s==null?void 0:s.runs[k])==null?void 0:v.openerStart)<_;)k++;let h=s?Bt(s,_,k):void 0,a=w[y],g=p[E],d=[c&&{kind:"math",start:c.index,end:c.end,match:c},h&&{kind:"code",start:h.start,end:h.end},a&&{kind:"opaque",start:a.start,end:a.end},g].filter(Boolean);if(!d.length)break;d.sort((b,z)=>b.start-z.start);let u=d[0];if(u.kind==="link"){if(u.image)q({kind:"opaque",start:u.start,end:u.end});else{q({kind:"opaque",start:u.start,end:u.labelStart});let b=r.slice(u.labelStart,u.labelEnd),z=ht(b,ut(b),new Set,!1);for(let L of z.active)q({...L,blockEligible:L.kind==="math"?!1:L.blockEligible,start:L.start+u.labelStart,end:L.end+u.labelStart,match:L.match&&{...L.match,index:L.match.index+u.labelStart,end:L.match.end+u.labelStart}});q({kind:"opaque",start:u.labelEnd,end:u.end})}E++}else u.kind==="code"?(q(u),k=h.closerIndex+1):(q(u),u.kind==="opaque"&&y++);_=u.end,u.kind==="math"&&(S=void 0)}return{active:m,math:x,code:A,opaque:C}}function pt(t){let n=String(t!=null?t:"");return ht(n,ut(n),Pt(n))}function Ut(t,n,i){let e=String(t!=null?t:""),r=String(i||"x")[0],l=[],o=0;for(let s of n)l.push(e.slice(o,s.start)),l.push(e.slice(s.start,s.end).replace(/[^\r\n]/g,r)),o=s.end;return l.push(e.slice(o)),l.join("")}function Ft(t,n=!0){let i=String(t!=null?t:"").replace(/^ {0,3}/,"");if(i.startsWith("<!--"))return{type:"until",value:"-->"};if(i.startsWith("<?"))return{type:"until",value:"?>"};if(i.startsWith("<![CDATA["))return{type:"until",value:"]]>"};if(/^<![A-Za-z]/.test(i))return{type:"until",value:">"};let e=/^<(pre|script|style|textarea)(?=[\s>]|$)/i.exec(i);if(e)return{type:"closing",value:e[1].toLowerCase()};let r=/^<\/?([A-Za-z][A-Za-z0-9-]*)(?=[\s/>]|$)/i.exec(i);if(r&&Lt.has(r[1].toLowerCase()))return{type:"blank"};if(n&&/^(?:<\/?[A-Za-z][\w-]*(?:\s+[A-Za-z:_][\w.:-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*\s*\/?>)\s*$/.test(i))return{type:"blank"}}function it(t,n){return n?n.type==="blank"?/^\s*$/.test(t):n.type==="closing"?new RegExp(`</${n.value}\\s*>`,"i").test(t):String(t).includes(n.value):!0}function mt(t){let n=String(t!=null?t:""),i=n.split(/(\r\n|\r|\n)/),e=[],r=0,l=null,o=-1,s=null,p=!0,w=null;for(let x=0;x<i.length;x+=2){let A=i[x],C=i[x+1]||"",m=r;r+=A.length+C.length;let y="plain";if(m<o)y="math";else if(l)y="fence",l=P(A,l);else if(s)y="html",it(A,s)&&(s=null);else{let k=/^( {0,3})(?=\$\$|\\\[)/.exec(A);k&&!w&&(w=F(n,et));let E=k?Rt(n,m+k[1].length,et,w):void 0;if(E)y="math",o=E.end;else{let _=Ft(A,p);if(_)y="html",it(A,_)||(s=_);else{let S=P(A,null);S&&(y="fence",l=S)}}}e.push({line:A,newline:C,start:m,kind:y}),p=/^\s*$/.test(A)}return e}function gt(t){var x,A,C;let n=String(t!=null?t:""),i=mt(n).map((m,y)=>({...m,content:m.line,originalIndex:y})),e=new Set,r=new Set(i.filter(({kind:m})=>m==="math"||m==="html").map(({originalIndex:m})=>m)),l=pt(n).math,o=0;for(let m of i){let y=m.start+m.line.length+m.newline.length;for(;((x=l[o])==null?void 0:x.end)<=m.start;)o++;((A=l[o])==null?void 0:A.start)<y&&((C=l[o])==null?void 0:C.end)>m.start&&r.add(m.originalIndex)}function s(m,y){let k=0,E=0;for(;E<m.length&&k<y;){if(m[E]===" ")k++;else if(m[E]==="	")k+=4-k%4;else break;E++}return k>=y?m.slice(E):void 0}function p(m,y){let k=/^( {0,3})([*+-]|\d{1,9}[.)])([ \t]+)(.*)$/.exec(m[y].content);if(!k)return;let E=k[1].length+k[2].length,_=0;for(let M of k[3])_+=M==="	"?4-(E+_)%4:1;let S=E+(_<=4?_:1),j=_<=4?k[4]:k[3].slice(1)+k[4],q=[{...m[y],content:j}],I=y+1;for(;I<m.length;){let M=m[I].content;if(/^[ \t]*$/.test(M)){q.push({...m[I],content:""}),I++;continue}let v=s(M,S);if(v===void 0)break;q.push({...m[I],content:v}),I++}return{child:q,end:I}}function w(m,y=0){if(y>16)return;let k=0,E=!0;for(;k<m.length;){let _=m[k],S=_.content;if(r.has(_.originalIndex)){E=/^[ \t]*$/.test(S),k++;continue}if(/^ {0,3}>[ \t]?/.exec(S)){let M=[],v=k;for(;v<m.length;){let c=/^ {0,3}>[ \t]?/.exec(m[v].content);if(!c)break;M.push({...m[v],content:m[v].content.slice(c[0].length)}),v++}w(M,y+1),E=!1,k=v;continue}let q=p(m,k);if(q){w(q.child,y+1),E=!1,k=q.end;continue}let I=P(S,null);if(I){let M=k+1;for(;M<m.length&&(r.has(m[M].originalIndex)||P(m[M].content,I)!==null);)M++;if(M<m.length){for(let v=k;v<=M;v++)e.add(m[v].originalIndex);k=M+1,E=!1;continue}for(let v=k;v<m.length;v++)e.add(m[v].originalIndex);return}if(E&&(/^ {4}/.test(S)||S.startsWith("	"))){let M=k;for(;M<m.length;){let v=m[M].content;if(/^[ \t]*$/.test(v)){M++;continue}if(!/^ {4}/.test(v)&&!v.startsWith("	"))break;e.add(m[M].originalIndex),M++}k=M,E=!0;continue}E=/^[ \t]*$/.test(S),k++}}return w(i),i.map(({line:m,newline:y},k)=>(e.has(k)?" ".repeat(m.length):m)+y).join("")}function Kt(t){let n=String(t!=null?t:""),i=X(n),e=[],r=0,l=0;for(;r<n.length;){if(n[r]!=="<"){r++;continue}let o=dt(n,r,i),s=o>=0?o:W(n,r,i);if(s<0){r++;continue}e.push(n.slice(l,r)),e.push(n.slice(r,s).replace(/[^\r\n]/g," ")),r=s,l=r}return e.push(n.slice(l)),e.join("")}function xt(t,n="x"){let i=String(t!=null?t:""),e=Ut(i,pt(i).active,n);return Kt(e)}(function(t,n){let i=n();t&&(t.QuizifySyntax=i)})(typeof globalThis!="undefined"?globalThis:window,function(){let t=[[f("editor.snippet.fitb"),f("editor.snippet.fitb.template"),f("editor.placeholder.answer")],[f("editor.snippet.choice"),f("editor.snippet.choice.template"),f("editor.placeholder.option_a")],[f("editor.snippet.reveal"),f("editor.snippet.reveal.template"),f("editor.placeholder.question")],[f("editor.snippet.annotation"),f("editor.snippet.annotation.template"),f("editor.placeholder.content")],[f("editor.snippet.collapse"),f("editor.snippet.collapse.template"),f("editor.placeholder.title")],[f("editor.snippet.tabs"),f("editor.snippet.tabs.template"),f("editor.placeholder.tab_one")],[f("editor.snippet.audio"),f("editor.snippet.audio.template"),f("editor.placeholder.audio_title")],[f("editor.snippet.recite"),f("editor.snippet.recite.template"),f("editor.placeholder.recite_text")]],n=[{id:"bold",label:f("editor.action.bold"),button:"B",shortcut:"Ctrl+B",key:"b",prefix:"**",suffix:"**",placeholder:f("editor.placeholder.bold")},{id:"italic",label:f("editor.action.italic"),button:"I",shortcut:"Ctrl+I",key:"i",prefix:"*",suffix:"*",placeholder:f("editor.placeholder.italic")},{id:"inline-code",label:f("editor.action.inline_code"),button:"</>",shortcut:"Ctrl+`",key:"`",prefix:"`",suffix:"`",placeholder:f("editor.placeholder.code")},{id:"link",label:f("editor.action.link"),button:"Link",shortcut:"Ctrl+K",key:"k",prefix:"[",suffix:"](url)",placeholder:f("editor.placeholder.link_text")},{id:"strikethrough",label:f("editor.action.strikethrough"),button:"S",shortcut:"Ctrl+Shift+X",key:"x",shift:!0,prefix:"~~",suffix:"~~",placeholder:f("editor.placeholder.strikethrough")},{id:"highlight",label:f("editor.action.highlight"),button:"==",shortcut:"Ctrl+Shift+H",key:"h",shift:!0,prefix:"==",suffix:"==",placeholder:f("editor.placeholder.highlight")},{id:"superscript",label:f("editor.action.superscript"),button:"X\xB2",shortcut:"Ctrl+Shift+.",code:"Period",shift:!0,prefix:"^",suffix:"^",placeholder:f("editor.placeholder.superscript")},{id:"subscript",label:f("editor.action.subscript"),button:"X\u2082",shortcut:"Ctrl+Shift+,",code:"Comma",shift:!0,prefix:"~",suffix:"~",placeholder:f("editor.placeholder.subscript")},{id:"github-alert",label:f("editor.action.alert"),button:"Alert",shortcut:"Ctrl+Shift+A",key:"a",shift:!0,format:"alert",placeholder:f("editor.placeholder.alert")},{id:"heading",label:f("editor.action.heading"),button:"H1",shortcut:"",format:"heading",placeholder:f("editor.placeholder.heading")},{id:"blockquote",label:f("editor.action.blockquote"),button:"Quote",shortcut:"",format:"blockquote",placeholder:f("editor.placeholder.quote")},{id:"unordered-list",label:f("editor.action.unordered_list"),button:"\u2022 List",shortcut:"",format:"unordered-list",placeholder:f("editor.placeholder.list_item")},{id:"ordered-list",label:f("editor.action.ordered_list"),button:"1. List",shortcut:"",format:"ordered-list",placeholder:f("editor.placeholder.list_item")},{id:"code-block",label:f("editor.action.code_block"),button:"```",shortcut:"",format:"code-block",placeholder:f("editor.placeholder.code")},{id:"image",label:f("editor.action.image"),button:"Image",shortcut:"",format:"image",placeholder:f("editor.placeholder.image_alt")},{id:"table",label:f("editor.action.table"),button:"Table",shortcut:"",format:"table",placeholder:f("editor.placeholder.content")}];function i(c,h=""){let a=String(h||""),g=a||(c==null?void 0:c.placeholder)||"";if((c==null?void 0:c.format)==="alert"){let d=/^(?:>|&gt;) \[!NOTE\]\n([\s\S]*?)\n?$/.exec(a);return d?d[1].split(/\r?\n/).map(b=>b.replace(/^(?:>|&gt;) ?/,"")).join(`
-`):`> [!NOTE]
-${g.split(/\r?\n/).map(b=>b?`> ${b}`:">").join(`
-`)}
-`}if((c==null?void 0:c.format)==="heading")return/^#{1,6}\s+/.test(a)?a.replace(/^#{1,6}\s+/,""):`# ${g}`;if((c==null?void 0:c.format)==="blockquote"){let d=g.split(/\r?\n/);return a&&d.every(b=>!b||/^(?:>|&gt;) ?/.test(b))?d.map(b=>b.replace(/^(?:>|&gt;) ?/,"")).join(`
-`):`${d.map(b=>`> ${b}`).join(`
-`)}
-`}if((c==null?void 0:c.format)==="unordered-list"){let d=g.split(/\r?\n/);return a&&d.every(b=>!b||/^[-*+]\s+/.test(b))?d.map(b=>b.replace(/^[-*+]\s+/,"")).join(`
-`):`${d.map(b=>`- ${b}`).join(`
-`)}
-`}if((c==null?void 0:c.format)==="ordered-list"){let d=g.split(/\r?\n/);return a&&d.every(b=>!b||/^\d+[.)]\s+/.test(b))?d.map(b=>b.replace(/^\d+[.)]\s+/,"")).join(`
-`):`${d.map((b,z)=>`${z+1}. ${b}`).join(`
-`)}
-`}if((c==null?void 0:c.format)==="code-block"){let d=/^```[^\n]*\n([\s\S]*?)\n```\s*$/.exec(a);return d?d[1]:`\`\`\`
-${g}
+(() => {
+  // src/shared/markdown-structure.js
+  function fenceMarker(line) {
+    const match = /^(?: {0,3})(`{3,}|~{3,})([^\r\n]*)$/.exec(
+      String(line != null ? line : "")
+    );
+    if (!match || match[1][0] === "`" && match[2].includes("`")) {
+      return null;
+    }
+    return { char: match[1][0], length: match[1].length };
+  }
+  function closesFence(line, fence) {
+    if (!fence) return false;
+    const match = /^(?: {0,3})(`{3,}|~{3,})\s*$/.exec(String(line != null ? line : ""));
+    return Boolean(
+      match && match[1][0] === fence.char && match[1].length >= fence.length
+    );
+  }
+  function nextFence(line, fence) {
+    if (fence) return closesFence(line, fence) ? null : fence;
+    return fenceMarker(line);
+  }
+  function uniqueSortedLetters(value) {
+    return Array.from(new Set(String(value || "").toUpperCase().split(""))).filter((letter) => /^[A-Z]$/.test(letter)).sort().join("");
+  }
+
+  // src/shared/i18n.js
+  var DEFAULT_LOCALE = "en";
+  var SUPPORTED_LOCALES = Object.freeze(["en", "zh-CN", "ru"]);
+  var emptyCatalogs = Object.freeze({
+    en: Object.freeze({}),
+    "zh-CN": Object.freeze({}),
+    ru: Object.freeze({})
+  });
+  function catalogs() {
+    const value = globalThis.QuizifyI18nCatalogs;
+    return value && typeof value === "object" ? value : emptyCatalogs;
+  }
+  function normalizeLocale(value) {
+    const raw = String(value || "").trim().replace(/_/g, "-").split(/[.@]/, 1)[0].toLowerCase();
+    if (raw === "ru" || raw.startsWith("ru-")) return "ru";
+    if (raw === "zh" || raw.startsWith("zh-")) return "zh-CN";
+    if (raw === "en" || raw.startsWith("en-")) return "en";
+    return DEFAULT_LOCALE;
+  }
+  function scriptLocale(root) {
+    var _a;
+    const scripts = Array.from(((_a = root == null ? void 0 : root.document) == null ? void 0 : _a.scripts) || []);
+    for (const script of scripts.reverse()) {
+      try {
+        const url = new URL(script.src, root.document.baseURI);
+        if (!/(?:^|\/)(?:_quizify|syntax-tools|editor(?:-preview)?)\.js$/i.test(url.pathname)) {
+          continue;
+        }
+        const value = url.searchParams.get("lang");
+        if (value) return value;
+      } catch {
+      }
+    }
+    return "";
+  }
+  function detectLocale(root = globalThis) {
+    var _a, _b, _c, _d, _e, _f;
+    const explicit = (root == null ? void 0 : root.quizifyLocale) || scriptLocale(root);
+    if (explicit) return normalizeLocale(explicit);
+    const documentLocale = (_c = (_b = (_a = root == null ? void 0 : root.document) == null ? void 0 : _a.documentElement) == null ? void 0 : _b.getAttribute) == null ? void 0 : _c.call(_b, "lang");
+    if (documentLocale) return normalizeLocale(documentLocale);
+    const navigatorLocale = ((_e = (_d = root == null ? void 0 : root.navigator) == null ? void 0 : _d.languages) == null ? void 0 : _e[0]) || ((_f = root == null ? void 0 : root.navigator) == null ? void 0 : _f.language);
+    return normalizeLocale(navigatorLocale);
+  }
+  var activeLocale = detectLocale();
+  function messageFor(key, locale = activeLocale) {
+    var _a, _b, _c, _d;
+    const normalized = normalizeLocale(locale);
+    const available = catalogs();
+    return (_d = (_c = (_a = available[normalized]) == null ? void 0 : _a[key]) != null ? _c : (_b = available.en) == null ? void 0 : _b[key]) != null ? _d : key;
+  }
+  function format(message, values = {}) {
+    return String(message).replace(
+      /\{([A-Za-z0-9_]+)\}/g,
+      (match, key) => Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : match
+    );
+  }
+  function t(key, values = {}, locale = activeLocale) {
+    var _a, _b;
+    const message = messageFor(key, locale);
+    if (message && typeof message === "object") {
+      return format((_b = (_a = message.other) != null ? _a : Object.values(message)[0]) != null ? _b : key, values);
+    }
+    return format(message, values);
+  }
+  function pluralCategory(locale, count) {
+    const normalized = normalizeLocale(locale);
+    const number = Math.abs(Math.trunc(Number(count) || 0));
+    if (normalized === "ru") {
+      const mod10 = number % 10;
+      const mod100 = number % 100;
+      if (mod10 === 1 && mod100 !== 11) return "one";
+      if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "few";
+      return "many";
+    }
+    if (normalized === "en" && number === 1) return "one";
+    return "other";
+  }
+  function tn(key, count, values = {}, locale = activeLocale) {
+    var _a, _b, _c;
+    let message = messageFor(key, locale);
+    if (message && typeof message === "object") {
+      const category = pluralCategory(locale, count);
+      message = (_c = (_b = (_a = message[category]) != null ? _a : message.other) != null ? _b : Object.values(message)[0]) != null ? _c : key;
+    }
+    return format(message, { count, ...values });
+  }
+
+  // src/shared/math.js
+  var KATEX_DELIMITERS = Object.freeze(
+    [
+      { left: "$$", right: "$$", display: true },
+      { left: "\\[", right: "\\]", display: true },
+      { left: "\\(", right: "\\)", display: false },
+      { left: "$", right: "$", display: false }
+    ].map(Object.freeze)
+  );
+  var KATEX_BLOCK_DELIMITERS = Object.freeze(
+    KATEX_DELIMITERS.filter((delimiter) => delimiter.display)
+  );
+  var MAX_TEX_SOURCE_LENGTH = 16 * 1024;
+  var MAX_TOTAL_TEX_SOURCE_LENGTH = 32 * 1024;
+  var MARKDOWN_HTML_TAGS = new Set(
+    "a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr svg math altglyph altglyphdef altglyphitem animate animatecolor animatemotion animatetransform circle clippath defs desc ellipse filter font font-face font-face-format font-face-name font-face-src font-face-uri g glyph glyphref hkern line lineargradient marker mask metadata mpath path pattern polygon polyline radialgradient rect set stop switch symbol text textpath tref tspan use view vkern feblend fecolormatrix fecomponenttransfer fecomposite feconvolvematrix fediffuselighting fedisplacementmap fedistantlight fedropshadow feflood fefunca fefuncb fefuncg fefuncr fegaussianblur feimage femerge femergenode femorphology feoffset fepointlight fespecularlighting fespotlight fetile feturbulence annotation annotation-xml maction maligngroup malignmark menclose merror mfenced mfrac mglyph mi mlabeledtr mlongdiv mmultiscripts mn mo mover mpadded mphantom mprescripts mroot mrow ms mscarries mscarry msgroup msline mspace msqrt msrow mstack mstyle msub msubsup msup mtable mtd mtext mtr munder munderover none semantics".split(" ")
+  );
+  var MATH_IGNORED_HTML_TAGS = new Set(
+    "pre code script style textarea option noscript kbd title template".split(" ")
+  );
+  var MARKDOWN_HTML_BLOCK_TAGS = new Set(
+    "address article aside base basefont blockquote body caption center col colgroup dd details dialog dir div dl dt fieldset figcaption figure footer form frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html iframe legend li link main menu menuitem nav noframes ol optgroup option p param search section summary table tbody td tfoot th thead title tr track ul".split(" ")
+  );
+  var delimiterStartPatterns = /* @__PURE__ */ new WeakMap();
+  function delimiterStartPattern(delimiters) {
+    let pattern = delimiterStartPatterns.get(delimiters);
+    if (!pattern) {
+      const alternatives = delimiters.map(
+        (delimiter) => delimiter.left.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      );
+      pattern = new RegExp(alternatives.join("|"), "g");
+      delimiterStartPatterns.set(delimiters, pattern);
+    }
+    return pattern;
+  }
+  function rawDelimiterStart(source, delimiters, fromIndex = 0) {
+    const immediate = delimiters.find(
+      (delimiter) => source.startsWith(delimiter.left, fromIndex)
+    );
+    if (immediate) return { index: fromIndex, delimiter: immediate };
+    const pattern = delimiterStartPattern(delimiters);
+    pattern.lastIndex = fromIndex;
+    const match = pattern.exec(source);
+    if (!match) return;
+    const selected = delimiters.find((delimiter) => match[0] === delimiter.left);
+    return { index: match.index, delimiter: selected };
+  }
+  function findPotentialMathDelimiterStart(source, delimiters = KATEX_DELIMITERS, fromIndex = 0) {
+    var _a;
+    return (_a = rawDelimiterStart(
+      String(source != null ? source : ""),
+      delimiters,
+      Math.max(0, Number(fromIndex) || 0)
+    )) == null ? void 0 : _a.index;
+  }
+  function asciiLetter(character) {
+    const code = (character == null ? void 0 : character.charCodeAt(0)) || 0;
+    return code >= 65 && code <= 90 || code >= 97 && code <= 122;
+  }
+  function asciiTagNameCharacter(character) {
+    const code = (character == null ? void 0 : character.charCodeAt(0)) || 0;
+    return asciiLetter(character) || code >= 48 && code <= 57 || character === "-";
+  }
+  function htmlTagHeadAt(source, start, allowClosing = true) {
+    if (source[start] !== "<") return;
+    let cursor = start + 1;
+    let closing = false;
+    if (source[cursor] === "/") {
+      if (!allowClosing) return;
+      closing = true;
+      cursor++;
+    }
+    const nameStart = cursor;
+    if (!asciiLetter(source[cursor])) return;
+    while (asciiTagNameCharacter(source[++cursor])) ;
+    const terminator = source[cursor];
+    if (terminator !== "/" && terminator !== ">" && !/\s/.test(terminator || "")) {
+      return;
+    }
+    return {
+      name: source.slice(nameStart, cursor).toLowerCase(),
+      end: cursor,
+      closing
+    };
+  }
+  function buildHtmlTagEndIndex(source) {
+    const text = String(source != null ? source : "");
+    if (!text.includes("<")) return;
+    const stateCount = 3;
+    const none = 0;
+    const single = 1;
+    const double = 2;
+    const ends = new Int32Array((text.length + 1) * stateCount);
+    for (let position = text.length - 1; position >= 0; position--) {
+      const current = position * stateCount;
+      const next = current + stateCount;
+      const character = text[position];
+      ends[current + none] = character === ">" ? position + 1 : character === "'" ? ends[next + single] : character === '"' ? ends[next + double] : ends[next + none];
+      ends[current + single] = character === "'" ? ends[next + none] : ends[next + single];
+      ends[current + double] = character === '"' ? ends[next + none] : ends[next + double];
+    }
+    return { ends, stateCount };
+  }
+  function quotedTagEnd(source, start, htmlIndex) {
+    if (htmlIndex) {
+      return htmlIndex.ends[(start + 2) * htmlIndex.stateCount] || -1;
+    }
+    let quote = "";
+    for (let index = start + 2; index < source.length; index++) {
+      const character = source[index];
+      if (quote) {
+        if (character === quote) quote = "";
+      } else if (character === '"' || character === "'") {
+        quote = character;
+      } else if (character === ">") {
+        return index + 1;
+      }
+    }
+    return -1;
+  }
+  function validKnownHtmlTagSyntax(source, head, end) {
+    let cursor = head.end;
+    if (head.closing) {
+      while (/\s/.test(source[cursor] || "")) cursor++;
+      return source[cursor] === ">" && cursor + 1 === end;
+    }
+    while (cursor < end) {
+      let separated = false;
+      while (/\s/.test(source[cursor] || "")) {
+        separated = true;
+        cursor++;
+      }
+      if (source[cursor] === ">") return cursor + 1 === end;
+      if (source[cursor] === "/") {
+        return source[cursor + 1] === ">" && cursor + 2 === end;
+      }
+      if (!separated || !/[A-Za-z_:]/.test(source[cursor] || "")) return false;
+      cursor++;
+      while (/[A-Za-z0-9_.:-]/.test(source[cursor] || "")) cursor++;
+      while (/\s/.test(source[cursor] || "")) cursor++;
+      if (source[cursor] !== "=") continue;
+      cursor++;
+      while (/\s/.test(source[cursor] || "")) cursor++;
+      const quote = source[cursor] === '"' || source[cursor] === "'" ? source[cursor++] : "";
+      if (quote) {
+        while (cursor < end && source[cursor] !== quote) cursor++;
+        if (source[cursor] !== quote) return false;
+        cursor++;
+      } else {
+        const valueStart = cursor;
+        while (cursor < end && !/[\s"'=<>`]/.test(source[cursor] || "")) {
+          cursor++;
+        }
+        if (cursor === valueStart) return false;
+      }
+    }
+    return false;
+  }
+  function tagEnd(source, start, htmlIndex) {
+    if (source.startsWith("<!--", start)) {
+      const end = source.indexOf("-->", start + 4);
+      return end < 0 ? source.length : end + 3;
+    }
+    if (source.startsWith("<![CDATA[", start)) {
+      const end = source.indexOf("]]>", start + 9);
+      return end < 0 ? source.length : end + 3;
+    }
+    const head = htmlTagHeadAt(source, start);
+    const knownTag = head && MARKDOWN_HTML_TAGS.has(head.name);
+    if (knownTag) {
+      const end = quotedTagEnd(source, start, htmlIndex);
+      if (end < 0) return -1;
+      return validKnownHtmlTagSyntax(source, head, end) ? end : -1;
+    }
+    if (source.startsWith("<?", start)) {
+      const end = source.indexOf("?>", start + 2);
+      return end < 0 ? source.length : end + 2;
+    }
+    if (/^<![A-Za-z]/.test(source.slice(start, start + 64))) {
+      const end = source.indexOf(">", start + 3);
+      return end < 0 ? source.length : end + 1;
+    }
+    return -1;
+  }
+  function htmlBoundaryAt(source, index, htmlIndex) {
+    return source[index] === "<" ? tagEnd(source, index, htmlIndex) : -1;
+  }
+  function findMathDelimiterEnd(source, delimiter, startIndex, htmlIndex) {
+    const text = String(source != null ? source : "");
+    let tagEndIndex = htmlIndex;
+    let htmlCandidateCount = 0;
+    let braceDepth = 0;
+    for (let index = startIndex; index < text.length; index++) {
+      if (braceDepth <= 0 && text.startsWith(delimiter.right, index)) {
+        return index;
+      }
+      const character = text[index];
+      if (!delimiter.display && (character === "\n" || character === "\r")) {
+        return -1;
+      } else if (character === "<") {
+        if (!tagEndIndex && ++htmlCandidateCount >= 16) {
+          tagEndIndex = buildHtmlTagEndIndex(text);
+        }
+        if (htmlBoundaryAt(text, index, tagEndIndex) >= 0) return -1;
+      } else if (character === "\\") {
+        if (!delimiter.display && (text[index + 1] === "\n" || text[index + 1] === "\r")) {
+          return -1;
+        }
+        index++;
+      } else if (character === "{") {
+        braceDepth++;
+      } else if (character === "}") {
+        braceDepth--;
+      }
+    }
+    return -1;
+  }
+  function findHtmlCrossingDelimiterEnd(source, delimiter, startIndex, htmlIndex) {
+    let braceDepth = 0;
+    let crossedHtml = false;
+    for (let index = startIndex; index < source.length; index++) {
+      if (braceDepth <= 0 && source.startsWith(delimiter.right, index)) {
+        return crossedHtml ? index : -1;
+      }
+      const character = source[index];
+      if (!delimiter.display && (character === "\n" || character === "\r")) {
+        return -1;
+      }
+      if (character === "<") {
+        const end = htmlBoundaryAt(source, index, htmlIndex);
+        if (end >= 0) {
+          crossedHtml = true;
+          index = end - 1;
+          continue;
+        }
+      }
+      if (character === "\\") {
+        if (!delimiter.display && (source[index + 1] === "\n" || source[index + 1] === "\r")) {
+          return -1;
+        }
+        index++;
+      } else if (character === "{") {
+        braceDepth++;
+      } else if (character === "}") {
+        braceDepth--;
+      }
+    }
+    return -1;
+  }
+  function matchMathDelimiterAt(source, startIndex = 0, delimiters = KATEX_DELIMITERS, htmlIndex) {
+    const text = String(source != null ? source : "");
+    const delimiter = delimiters.find(
+      (candidate) => text.startsWith(candidate.left, startIndex)
+    );
+    if (!delimiter) return;
+    const contentStart = startIndex + delimiter.left.length;
+    if (text.indexOf(delimiter.right, contentStart) < 0) return;
+    const contentEnd = findMathDelimiterEnd(
+      text,
+      delimiter,
+      contentStart,
+      htmlIndex
+    );
+    if (contentEnd < 0) return;
+    const rawEnd = contentEnd + delimiter.right.length;
+    return {
+      raw: text.slice(startIndex, rawEnd),
+      text: text.slice(contentStart, contentEnd),
+      left: delimiter.left,
+      right: delimiter.right,
+      display: delimiter.display,
+      index: startIndex,
+      end: rawEnd
+    };
+  }
+  function lowerBound(records, position) {
+    let low = 0;
+    let high = records.length;
+    while (low < high) {
+      const middle = low + high >>> 1;
+      if (records[middle].position < position) low = middle + 1;
+      else high = middle;
+    }
+    return low;
+  }
+  function buildMathSearchIndex(text, delimiters, htmlIndex = buildHtmlTagEndIndex(text)) {
+    var _a;
+    const balanceAt = new Int32Array(text.length + 1);
+    const escaped = new Uint8Array(text.length);
+    let balance = 0;
+    let slashRun = 0;
+    for (let index = 0; index < text.length; index++) {
+      balanceAt[index] = balance;
+      escaped[index] = slashRun % 2;
+      const character = text[index];
+      if (character === "\\") {
+        slashRun++;
+        continue;
+      }
+      if (!escaped[index]) {
+        if (character === "{") balance++;
+        else if (character === "}") balance--;
+      }
+      slashRun = 0;
+    }
+    balanceAt[text.length] = balance;
+    const regionAt = new Int32Array(text.length);
+    const lineAt = new Uint32Array(text.length + 1);
+    let line = 0;
+    for (let index = 0; index < text.length; index++) {
+      lineAt[index] = line;
+      if (text[index] === "\n" || text[index] === "\r" && text[index + 1] !== "\n") {
+        line++;
+      }
+    }
+    lineAt[text.length] = line;
+    let region = 0;
+    let cursor = 0;
+    while (cursor < text.length) {
+      const end = !escaped[cursor] ? htmlBoundaryAt(text, cursor, htmlIndex) : -1;
+      if (end >= 0) {
+        regionAt.fill(-1, cursor, end);
+        cursor = end;
+        region++;
+      } else {
+        regionAt[cursor++] = region;
+      }
+    }
+    const closers = /* @__PURE__ */ new Map();
+    for (const right of new Set(delimiters.map((delimiter) => delimiter.right))) {
+      const display = (_a = delimiters.find((delimiter) => delimiter.right === right)) == null ? void 0 : _a.display;
+      const records = [];
+      let position = text.indexOf(right);
+      while (position >= 0) {
+        if (!escaped[position] && regionAt[position] >= 0) {
+          records.push({
+            position,
+            region: regionAt[position],
+            line: lineAt[position],
+            balance: balanceAt[position],
+            suffixMin: balanceAt[position]
+          });
+        }
+        position = text.indexOf(right, position + 1);
+      }
+      for (let index = records.length - 2; index >= 0; index--) {
+        if (records[index].region === records[index + 1].region && (display || records[index].line === records[index + 1].line)) {
+          records[index].suffixMin = Math.min(
+            records[index].balance,
+            records[index + 1].suffixMin
+          );
+        }
+      }
+      closers.set(right, records);
+    }
+    return { balanceAt, escaped, regionAt, lineAt, closers, htmlIndex };
+  }
+  function indexedMathDelimiterStart(text, delimiters, fromIndex, index = buildMathSearchIndex(text, delimiters)) {
+    let searchFrom = fromIndex;
+    while (searchFrom < text.length) {
+      const candidate = rawDelimiterStart(text, delimiters, searchFrom);
+      if (!candidate) return;
+      const { delimiter, index: start } = candidate;
+      const region = index.regionAt[start];
+      if (!index.escaped[start] && region >= 0) {
+        const records = index.closers.get(delimiter.right) || [];
+        const recordIndex = lowerBound(records, start + delimiter.left.length);
+        const record = records[recordIndex];
+        if ((record == null ? void 0 : record.region) === region && (delimiter.display || record.line === index.lineAt[start]) && record.suffixMin <= index.balanceAt[start]) {
+          if (matchMathDelimiterAt(text, start, delimiters, index.htmlIndex)) {
+            return start;
+          }
+        }
+        if (record && record.region !== region && (delimiter.display || record.line === index.lineAt[start])) {
+          const rejectedEnd = findHtmlCrossingDelimiterEnd(
+            text,
+            delimiter,
+            start + delimiter.left.length,
+            index.htmlIndex
+          );
+          if (rejectedEnd >= 0) {
+            searchFrom = rejectedEnd + delimiter.right.length;
+            continue;
+          }
+        }
+      }
+      searchFrom = start + (index.escaped[start] ? 1 : delimiter.left.length);
+    }
+  }
+  function indexedMathDelimiterMatchAt(text, start, delimiters, index) {
+    const delimiter = delimiters.find(
+      (candidate) => text.startsWith(candidate.left, start)
+    );
+    if (!delimiter || index.escaped[start] || index.regionAt[start] < 0) return;
+    const records = index.closers.get(delimiter.right) || [];
+    const record = records[lowerBound(records, start + delimiter.left.length)];
+    if ((record == null ? void 0 : record.region) !== index.regionAt[start] || !delimiter.display && record.line !== index.lineAt[start] || record.suffixMin > index.balanceAt[start]) {
+      return;
+    }
+    return matchMathDelimiterAt(text, start, delimiters, index.htmlIndex);
+  }
+  function findMathRanges(source, delimiters = KATEX_DELIMITERS) {
+    const text = String(source != null ? source : "");
+    const searchIndex = buildMathSearchIndex(text, delimiters);
+    const ranges = [];
+    let offset = 0;
+    while (offset < text.length) {
+      const start = indexedMathDelimiterStart(
+        text,
+        delimiters,
+        offset,
+        searchIndex
+      );
+      if (start === void 0) break;
+      const match = matchMathDelimiterAt(
+        text,
+        start,
+        delimiters,
+        searchIndex.htmlIndex
+      );
+      ranges.push(match);
+      offset = match.end;
+    }
+    return ranges;
+  }
+  function escapedAt(source, index) {
+    let slashCount = 0;
+    while (index > 0 && source[--index] === "\\") slashCount++;
+    return slashCount % 2 === 1;
+  }
+  function buildBacktickRunIndex(source) {
+    var _a;
+    const text = String(source != null ? source : "");
+    const runs = [];
+    let start = text.indexOf("`");
+    while (start >= 0) {
+      let end = start + 1;
+      while (text[end] === "`") end++;
+      const escaped = escapedAt(text, start);
+      runs.push({
+        start,
+        end,
+        length: end - start,
+        // A backslash escapes one backtick, not the rest of its run. Thus the
+        // remaining suffix can still open a code span of one shorter length.
+        openerStart: start + (escaped ? 1 : 0),
+        openerLength: end - start - (escaped ? 1 : 0)
+      });
+      start = text.indexOf("`", end);
+    }
+    const nextCloser = new Int32Array(runs.length);
+    nextCloser.fill(-1);
+    const nextRunByLength = /* @__PURE__ */ new Map();
+    for (let index = runs.length - 1; index >= 0; index--) {
+      const run = runs[index];
+      if (run.openerLength > 0) {
+        nextCloser[index] = (_a = nextRunByLength.get(run.openerLength)) != null ? _a : -1;
+      }
+      nextRunByLength.set(run.length, index);
+    }
+    return { runs, nextCloser };
+  }
+  function backtickCodeRange(index, runIndex) {
+    const opener = index.runs[runIndex];
+    const closerIndex = index.nextCloser[runIndex];
+    if (!(opener == null ? void 0 : opener.openerLength) || closerIndex < 0) return;
+    return {
+      start: opener.openerStart,
+      end: index.runs[closerIndex].end,
+      closerIndex
+    };
+  }
+  function nextInlineCodeRange(index, fromIndex = 0, firstRunIndex = 0) {
+    for (let runIndex = firstRunIndex; runIndex < index.runs.length; runIndex++) {
+      const run = index.runs[runIndex];
+      if (run.openerStart < fromIndex) continue;
+      const range = backtickCodeRange(index, runIndex);
+      if (range) return { ...range, runIndex };
+    }
+  }
+  function closingHtmlCodeTag(source, start, htmlIndex) {
+    const opener = htmlTagHeadAt(source, start, false);
+    if (!opener || !MATH_IGNORED_HTML_TAGS.has(opener.name)) {
+      return -1;
+    }
+    const openingEnd = tagEnd(source, start, htmlIndex);
+    if (openingEnd < 0) return -1;
+    if (opener.name === "option") {
+      const optionClose = /<\/option\s*>|<option(?=[\s>])|<\/select\s*>/ig;
+      optionClose.lastIndex = openingEnd;
+      const boundary = optionClose.exec(source);
+      if (!boundary) return source.length;
+      return /^<\/option/i.test(boundary[0]) ? boundary.index + boundary[0].length : boundary.index;
+    }
+    const closePattern = new RegExp(`</${opener.name}\\s*>`, "ig");
+    closePattern.lastIndex = openingEnd;
+    const closer = closePattern.exec(source);
+    return closer ? closer.index + closer[0].length : source.length;
+  }
+  function findHtmlOpaqueRanges(source, htmlIndex = buildHtmlTagEndIndex(source)) {
+    const text = String(source != null ? source : "");
+    const ranges = [];
+    let index = text.indexOf("<");
+    while (index >= 0) {
+      const markupEnd = htmlBoundaryAt(text, index, htmlIndex);
+      if (markupEnd >= 0) {
+        const ignoredEnd = closingHtmlCodeTag(text, index, htmlIndex);
+        const end = ignoredEnd >= 0 ? ignoredEnd : markupEnd;
+        ranges.push({ start: index, end });
+        index = text.indexOf("<", end);
+        continue;
+      }
+      index = text.indexOf("<", index + 1);
+    }
+    return ranges;
+  }
+  function normalizeReferenceLabel(value) {
+    return String(value != null ? value : "").replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1").trim().replace(/\s+/g, " ").toLowerCase();
+  }
+  function collectMarkdownReferenceLabels(source) {
+    const labels = /* @__PURE__ */ new Set();
+    for (const { line, kind } of classifyMarkdownBlockLines(source)) {
+      if (kind !== "plain") continue;
+      const match = /^ {0,3}\[((?:\\.|[^\]\\]){1,999})\]:[ \t]*(?:<[^<>\r\n]+>|[^ \t\r\n<>]+)(?:[ \t]+(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|\((?:\\.|[^)\\\r\n])*\)))?[ \t]*$/.exec(
+        line
+      );
+      if (match) labels.add(normalizeReferenceLabel(match[1]));
+    }
+    return labels;
+  }
+  function buildMarkdownLinkScanIndex(source) {
+    const length = source.length;
+    const escaped = new Uint8Array(length);
+    let slashRun = 0;
+    for (let index = 0; index < length; index++) {
+      escaped[index] = slashRun % 2;
+      if (source[index] === "\\") slashRun++;
+      else slashRun = 0;
+    }
+    const parenEnd = new Int32Array(length);
+    parenEnd.fill(-1);
+    const stack = [];
+    for (let index = 0; index < length; index++) {
+      if (source[index] === "\n" || source[index] === "\r") {
+        stack.length = 0;
+      } else if (!escaped[index] && source[index] === "(") {
+        stack.push(index);
+      } else if (!escaped[index] && source[index] === ")" && stack.length) {
+        parenEnd[stack.pop()] = index;
+      }
+    }
+    const nextClose = new Int32Array(length + 1);
+    const nextSpecial = new Int32Array(length + 1);
+    const nextBoundary = new Int32Array(length + 1);
+    const nextLineBreak = new Int32Array(length + 1);
+    nextClose.fill(-1);
+    nextSpecial.fill(-1);
+    nextBoundary.fill(-1);
+    nextLineBreak.fill(-1);
+    for (let index = length - 1; index >= 0; index--) {
+      const character = source[index];
+      const active = !escaped[index];
+      const boundary = active && (character === "<" || character === " " || character === "	");
+      nextClose[index] = active && character === ")" ? index : nextClose[index + 1];
+      nextSpecial[index] = active && (boundary || character === "(" || character === ")") ? index : nextSpecial[index + 1];
+      nextBoundary[index] = boundary ? index : nextBoundary[index + 1];
+      nextLineBreak[index] = character === "\n" || character === "\r" ? index : nextLineBreak[index + 1];
+    }
+    return { nextBoundary, nextClose, nextLineBreak, nextSpecial, parenEnd };
+  }
+  function markdownLinkDestinationEnd(source, start, scanIndex) {
+    if (source[start] !== "(") return -1;
+    const lineBreak = scanIndex.nextLineBreak[start + 1];
+    const lineEnd = lineBreak < 0 ? source.length : lineBreak;
+    const nextClose = scanIndex.nextClose[start + 1];
+    if (nextClose < 0 || nextClose >= lineEnd) return -1;
+    let cursor = start + 1;
+    const skipSpace = () => {
+      while (source[cursor] === " " || source[cursor] === "	") cursor++;
+    };
+    skipSpace();
+    if (source[cursor] === "<") {
+      cursor++;
+      let closed = false;
+      while (cursor < source.length) {
+        const character = source[cursor];
+        if (character === "\n" || character === "\r" || character === "<") {
+          return -1;
+        }
+        if (character === "\\") {
+          cursor += 2;
+        } else if (character === ">") {
+          cursor++;
+          closed = true;
+          break;
+        } else {
+          cursor++;
+        }
+      }
+      if (!closed) return -1;
+    } else {
+      let depth = 0;
+      while (cursor < lineEnd) {
+        const special = scanIndex.nextSpecial[cursor];
+        if (special < 0 || special >= lineEnd) return -1;
+        cursor = special;
+        const character = source[cursor];
+        if (character === "<") return -1;
+        if (character === "(") {
+          const close = scanIndex.parenEnd[cursor];
+          const boundary = scanIndex.nextBoundary[cursor + 1];
+          if (close < 0 || close >= lineEnd || boundary >= 0 && boundary < close) {
+            return -1;
+          }
+          depth++;
+          cursor = close + 1;
+          depth--;
+        } else if (character === ")") {
+          if (depth === 0) return cursor + 1;
+          depth--;
+          cursor++;
+        } else {
+          break;
+        }
+      }
+      if (depth !== 0) return -1;
+    }
+    const separatorStart = cursor;
+    skipSpace();
+    if (source[cursor] === ")") return cursor + 1;
+    if (cursor === separatorStart) return -1;
+    const opener = source[cursor];
+    const closer = opener === '"' ? '"' : opener === "'" ? "'" : opener === "(" ? ")" : "";
+    if (!closer) return -1;
+    cursor++;
+    let titleClosed = false;
+    while (cursor < source.length) {
+      const character = source[cursor];
+      if (character === "\n" || character === "\r") return -1;
+      if (character === "\\") {
+        cursor += 2;
+      } else if (character === closer) {
+        cursor++;
+        titleClosed = true;
+        break;
+      } else {
+        cursor++;
+      }
+    }
+    if (!titleClosed) return -1;
+    skipSpace();
+    return source[cursor] === ")" ? cursor + 1 : -1;
+  }
+  function markdownReferenceSuffix(source, start) {
+    if (source[start] !== "[") return;
+    for (let index = start + 1; index < source.length; index++) {
+      if (source[index] === "\n" || source[index] === "\r") return;
+      if (source[index] === "\\") {
+        index++;
+      } else if (source[index] === "]") {
+        return { end: index + 1, label: source.slice(start + 1, index) };
+      } else if (source[index] === "[") {
+        return;
+      }
+    }
+  }
+  function findMarkdownLinkContexts(source, referenceLabels = /* @__PURE__ */ new Set()) {
+    const text = String(source != null ? source : "");
+    const scanIndex = buildMarkdownLinkScanIndex(text);
+    const contexts = [];
+    const brackets = [];
+    function supportedLabel(labelStart, labelEnd) {
+      var _a, _b, _c;
+      const label = text.slice(labelStart, labelEnd);
+      const atomic = [];
+      for (const match of findMathRanges(label)) {
+        atomic.push({ start: match.index, end: match.end });
+      }
+      const revealPattern = /\[\[(.*?)\|\|(.*?)\]\]/g;
+      let reveal;
+      while (reveal = revealPattern.exec(label)) {
+        atomic.push({ start: reveal.index, end: reveal.index + reveal[0].length });
+      }
+      atomic.sort((left, right) => left.start - right.start || right.end - left.end);
+      let atomicIndex = 0;
+      let depth = 0;
+      for (let index = 0; index < label.length; index++) {
+        while (((_a = atomic[atomicIndex]) == null ? void 0 : _a.end) <= index) atomicIndex++;
+        if (((_b = atomic[atomicIndex]) == null ? void 0 : _b.start) <= index && index < ((_c = atomic[atomicIndex]) == null ? void 0 : _c.end)) {
+          index = atomic[atomicIndex].end - 1;
+          continue;
+        }
+        if (label[index] === "\\") {
+          index++;
+        } else if (label[index] === "[") {
+          if (++depth > 1) return false;
+        } else if (label[index] === "]") {
+          if (depth-- <= 0) return false;
+        }
+      }
+      return depth === 0;
+    }
+    for (let index = 0; index < text.length; index++) {
+      if (text[index] === "\\") {
+        index++;
+        continue;
+      }
+      if (text[index] === "[") {
+        brackets.push(index);
+        continue;
+      }
+      if (text[index] !== "]" || !brackets.length) continue;
+      const labelOpen = brackets.pop();
+      if (text.slice(Math.max(0, labelOpen - 6), labelOpen) === "!audio") {
+        continue;
+      }
+      const image = labelOpen > 0 && text[labelOpen - 1] === "!" && !escapedAt(text, labelOpen - 1);
+      const ownerStart = image ? labelOpen - 1 : labelOpen;
+      let end = markdownLinkDestinationEnd(text, index + 1, scanIndex);
+      if (end < 0) {
+        const reference = markdownReferenceSuffix(text, index + 1);
+        if (reference) {
+          const label = reference.label || text.slice(labelOpen + 1, index);
+          if (referenceLabels.has(normalizeReferenceLabel(label))) {
+            end = reference.end;
+          }
+        } else if (text[index + 1] !== ":" && referenceLabels.has(
+          normalizeReferenceLabel(text.slice(labelOpen + 1, index))
+        )) {
+          end = index + 1;
+        }
+      }
+      if (end >= 0 && supportedLabel(labelOpen + 1, index)) {
+        contexts.push({
+          kind: "link",
+          start: ownerStart,
+          end,
+          labelStart: labelOpen + 1,
+          labelEnd: index,
+          image
+        });
+        index = end - 1;
+      }
+    }
+    return contexts.sort(
+      (left, right) => left.start - right.start || right.end - left.end
+    );
+  }
+  function resolveInlineOwnership(source, extraOpaqueRanges = [], referenceLabels = /* @__PURE__ */ new Set(), includeLinks = true) {
+    var _a, _b, _c;
+    const text = String(source != null ? source : "");
+    const hasMath = findPotentialMathDelimiterStart(text) !== void 0;
+    const mathIndex = hasMath ? buildMathSearchIndex(text, KATEX_DELIMITERS) : null;
+    const backticks = text.includes("`") ? buildBacktickRunIndex(text) : null;
+    const linkContexts = includeLinks ? findMarkdownLinkContexts(text, referenceLabels) : [];
+    const opaqueRanges = extraOpaqueRanges.map((range) => ({ start: range.start, end: range.end })).sort((left, right) => left.start - right.start || right.end - left.end);
+    const activeMath = [];
+    const activeCode = [];
+    const activeOpaque = [];
+    const active = [];
+    let opaqueIndex = 0;
+    let codeRunIndex = 0;
+    let linkIndex = 0;
+    let cursor = 0;
+    let cachedMath;
+    let mathSearchExhausted = false;
+    function appendRange(range) {
+      active.push(range);
+      if (range.kind === "math") activeMath.push(range);
+      else if (range.kind === "code") activeCode.push(range);
+      else activeOpaque.push(range);
+    }
+    while (cursor < text.length) {
+      while (((_a = opaqueRanges[opaqueIndex]) == null ? void 0 : _a.start) < cursor) opaqueIndex++;
+      while (((_b = linkContexts[linkIndex]) == null ? void 0 : _b.start) < cursor) linkIndex++;
+      if ((cachedMath == null ? void 0 : cachedMath.index) < cursor) cachedMath = void 0;
+      if (mathIndex && !cachedMath && !mathSearchExhausted) {
+        const mathStart = indexedMathDelimiterStart(
+          text,
+          KATEX_DELIMITERS,
+          cursor,
+          mathIndex
+        );
+        if (mathStart === void 0) {
+          mathSearchExhausted = true;
+        } else {
+          cachedMath = matchMathDelimiterAt(
+            text,
+            mathStart,
+            KATEX_DELIMITERS,
+            mathIndex.htmlIndex
+          );
+        }
+      }
+      const math = cachedMath;
+      while (((_c = backticks == null ? void 0 : backticks.runs[codeRunIndex]) == null ? void 0 : _c.openerStart) < cursor) codeRunIndex++;
+      const code = backticks ? nextInlineCodeRange(backticks, cursor, codeRunIndex) : void 0;
+      const opaque = opaqueRanges[opaqueIndex];
+      const link = linkContexts[linkIndex];
+      const candidates = [
+        math && { kind: "math", start: math.index, end: math.end, match: math },
+        code && { kind: "code", start: code.start, end: code.end },
+        opaque && { kind: "opaque", start: opaque.start, end: opaque.end },
+        link
+      ].filter(Boolean);
+      if (!candidates.length) break;
+      candidates.sort((left, right) => left.start - right.start);
+      const range = candidates[0];
+      if (range.kind === "link") {
+        if (range.image) {
+          appendRange({ kind: "opaque", start: range.start, end: range.end });
+        } else {
+          appendRange({
+            kind: "opaque",
+            start: range.start,
+            end: range.labelStart
+          });
+          const label = text.slice(range.labelStart, range.labelEnd);
+          const nested = resolveInlineOwnership(
+            label,
+            findHtmlOpaqueRanges(label),
+            /* @__PURE__ */ new Set(),
+            false
+          );
+          for (const child of nested.active) {
+            appendRange({
+              ...child,
+              blockEligible: child.kind === "math" ? false : child.blockEligible,
+              start: child.start + range.labelStart,
+              end: child.end + range.labelStart,
+              match: child.match && {
+                ...child.match,
+                index: child.match.index + range.labelStart,
+                end: child.match.end + range.labelStart
+              }
+            });
+          }
+          appendRange({
+            kind: "opaque",
+            start: range.labelEnd,
+            end: range.end
+          });
+        }
+        linkIndex++;
+      } else if (range.kind === "code") {
+        appendRange(range);
+        codeRunIndex = code.closerIndex + 1;
+      } else {
+        appendRange(range);
+        if (range.kind === "opaque") opaqueIndex++;
+      }
+      cursor = range.end;
+      if (range.kind === "math") cachedMath = void 0;
+    }
+    return {
+      active,
+      math: activeMath,
+      code: activeCode,
+      opaque: activeOpaque
+    };
+  }
+  function resolveInlineMathAndCodeRanges(source) {
+    const text = String(source != null ? source : "");
+    return resolveInlineOwnership(
+      text,
+      findHtmlOpaqueRanges(text),
+      collectMarkdownReferenceLabels(text)
+    );
+  }
+  function maskRanges(source, ranges, replacement) {
+    const text = String(source != null ? source : "");
+    const fill = String(replacement || "x")[0];
+    const masked = [];
+    let offset = 0;
+    for (const range of ranges) {
+      masked.push(text.slice(offset, range.start));
+      masked.push(text.slice(range.start, range.end).replace(/[^\r\n]/g, fill));
+      offset = range.end;
+    }
+    masked.push(text.slice(offset));
+    return masked.join("");
+  }
+  function rawHtmlBlockStart(line, allowTypeSeven = true) {
+    const content = String(line != null ? line : "").replace(/^ {0,3}/, "");
+    if (content.startsWith("<!--")) return { type: "until", value: "-->" };
+    if (content.startsWith("<?")) return { type: "until", value: "?>" };
+    if (content.startsWith("<![CDATA[")) return { type: "until", value: "]]>" };
+    if (/^<![A-Za-z]/.test(content)) return { type: "until", value: ">" };
+    const raw = /^<(pre|script|style|textarea)(?=[\s>]|$)/i.exec(content);
+    if (raw) return { type: "closing", value: raw[1].toLowerCase() };
+    const block = /^<\/?([A-Za-z][A-Za-z0-9-]*)(?=[\s/>]|$)/i.exec(content);
+    if (block && MARKDOWN_HTML_BLOCK_TAGS.has(block[1].toLowerCase())) {
+      return { type: "blank" };
+    }
+    if (allowTypeSeven && /^(?:<\/?[A-Za-z][\w-]*(?:\s+[A-Za-z:_][\w.:-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*\s*\/?>)\s*$/.test(
+      content
+    )) {
+      return { type: "blank" };
+    }
+  }
+  function rawHtmlBlockEnds(line, state) {
+    if (!state) return true;
+    if (state.type === "blank") return /^\s*$/.test(line);
+    if (state.type === "closing") {
+      return new RegExp(`</${state.value}\\s*>`, "i").test(line);
+    }
+    return String(line).includes(state.value);
+  }
+  function classifyMarkdownBlockLines(source) {
+    const text = String(source != null ? source : "");
+    const parts = text.split(/(\r\n|\r|\n)/);
+    const lines = [];
+    let offset = 0;
+    let fence = null;
+    let mathEnd = -1;
+    let rawHtml = null;
+    let previousBlank = true;
+    let blockMathIndex = null;
+    for (let index = 0; index < parts.length; index += 2) {
+      const line = parts[index];
+      const newline = parts[index + 1] || "";
+      const start = offset;
+      offset += line.length + newline.length;
+      let kind = "plain";
+      if (start < mathEnd) {
+        kind = "math";
+      } else if (fence) {
+        kind = "fence";
+        fence = nextFence(line, fence);
+      } else if (rawHtml) {
+        kind = "html";
+        if (rawHtmlBlockEnds(line, rawHtml)) rawHtml = null;
+      } else {
+        const opener = /^( {0,3})(?=\$\$|\\\[)/.exec(line);
+        if (opener && !blockMathIndex) {
+          blockMathIndex = buildMathSearchIndex(text, KATEX_BLOCK_DELIMITERS);
+        }
+        const math = opener ? indexedMathDelimiterMatchAt(
+          text,
+          start + opener[1].length,
+          KATEX_BLOCK_DELIMITERS,
+          blockMathIndex
+        ) : void 0;
+        if (math) {
+          kind = "math";
+          mathEnd = math.end;
+        } else {
+          const html = rawHtmlBlockStart(line, previousBlank);
+          if (html) {
+            kind = "html";
+            if (!rawHtmlBlockEnds(line, html)) rawHtml = html;
+          } else {
+            const next = nextFence(line, null);
+            if (next) {
+              kind = "fence";
+              fence = next;
+            }
+          }
+        }
+      }
+      lines.push({ line, newline, start, kind });
+      previousBlank = /^\s*$/.test(line);
+    }
+    return lines;
+  }
+  function maskMarkdownFencedCode(source) {
+    var _a, _b, _c;
+    const text = String(source != null ? source : "");
+    const lines = classifyMarkdownBlockLines(text).map((line, index) => ({
+      ...line,
+      content: line.line,
+      originalIndex: index
+    }));
+    const masked = /* @__PURE__ */ new Set();
+    const blocked = new Set(
+      lines.filter(({ kind }) => kind === "math" || kind === "html").map(({ originalIndex }) => originalIndex)
+    );
+    const mathRanges = resolveInlineMathAndCodeRanges(text).math;
+    let rangeIndex = 0;
+    for (const line of lines) {
+      const end = line.start + line.line.length + line.newline.length;
+      while (((_a = mathRanges[rangeIndex]) == null ? void 0 : _a.end) <= line.start) rangeIndex++;
+      if (((_b = mathRanges[rangeIndex]) == null ? void 0 : _b.start) < end && ((_c = mathRanges[rangeIndex]) == null ? void 0 : _c.end) > line.start) {
+        blocked.add(line.originalIndex);
+      }
+    }
+    function stripIndent(value, columns) {
+      let column = 0;
+      let index = 0;
+      while (index < value.length && column < columns) {
+        if (value[index] === " ") {
+          column++;
+        } else if (value[index] === "	") {
+          column += 4 - column % 4;
+        } else {
+          break;
+        }
+        index++;
+      }
+      return column >= columns ? value.slice(index) : void 0;
+    }
+    function listItemProjection(view, index) {
+      const match = /^( {0,3})([*+-]|\d{1,9}[.)])([ \t]+)(.*)$/.exec(
+        view[index].content
+      );
+      if (!match) return;
+      const markerWidth = match[1].length + match[2].length;
+      let gapWidth = 0;
+      for (const character of match[3]) {
+        gapWidth += character === "	" ? 4 - (markerWidth + gapWidth) % 4 : 1;
+      }
+      const contentIndent = markerWidth + (gapWidth <= 4 ? gapWidth : 1);
+      const firstContent = gapWidth <= 4 ? match[4] : match[3].slice(1) + match[4];
+      const child = [{ ...view[index], content: firstContent }];
+      let cursor = index + 1;
+      while (cursor < view.length) {
+        const value = view[cursor].content;
+        if (/^[ \t]*$/.test(value)) {
+          child.push({ ...view[cursor], content: "" });
+          cursor++;
+          continue;
+        }
+        const projected = stripIndent(value, contentIndent);
+        if (projected === void 0) break;
+        child.push({ ...view[cursor], content: projected });
+        cursor++;
+      }
+      return { child, end: cursor };
+    }
+    function maskScope(view, depth = 0) {
+      if (depth > 16) return;
+      let index = 0;
+      let previousBlank = true;
+      while (index < view.length) {
+        const entry = view[index];
+        const content = entry.content;
+        if (blocked.has(entry.originalIndex)) {
+          previousBlank = /^[ \t]*$/.test(content);
+          index++;
+          continue;
+        }
+        const quote = /^ {0,3}>[ \t]?/.exec(content);
+        if (quote) {
+          const child = [];
+          let cursor = index;
+          while (cursor < view.length) {
+            const prefix = /^ {0,3}>[ \t]?/.exec(view[cursor].content);
+            if (!prefix) break;
+            child.push({
+              ...view[cursor],
+              content: view[cursor].content.slice(prefix[0].length)
+            });
+            cursor++;
+          }
+          maskScope(child, depth + 1);
+          previousBlank = false;
+          index = cursor;
+          continue;
+        }
+        const list = listItemProjection(view, index);
+        if (list) {
+          maskScope(list.child, depth + 1);
+          previousBlank = false;
+          index = list.end;
+          continue;
+        }
+        const opener = nextFence(content, null);
+        if (opener) {
+          let closer = index + 1;
+          while (closer < view.length && (blocked.has(view[closer].originalIndex) || nextFence(view[closer].content, opener) !== null)) {
+            closer++;
+          }
+          if (closer < view.length) {
+            for (let line = index; line <= closer; line++) {
+              masked.add(view[line].originalIndex);
+            }
+            index = closer + 1;
+            previousBlank = false;
+            continue;
+          }
+          for (let line = index; line < view.length; line++) {
+            masked.add(view[line].originalIndex);
+          }
+          return;
+        }
+        if (previousBlank && (/^ {4}/.test(content) || content.startsWith("	"))) {
+          let cursor = index;
+          while (cursor < view.length) {
+            const value = view[cursor].content;
+            if (/^[ \t]*$/.test(value)) {
+              cursor++;
+              continue;
+            }
+            if (!/^ {4}/.test(value) && !value.startsWith("	")) break;
+            masked.add(view[cursor].originalIndex);
+            cursor++;
+          }
+          index = cursor;
+          previousBlank = true;
+          continue;
+        }
+        previousBlank = /^[ \t]*$/.test(content);
+        index++;
+      }
+    }
+    maskScope(lines);
+    return lines.map(
+      ({ line, newline }, lineIndex) => (masked.has(lineIndex) ? " ".repeat(line.length) : line) + newline
+    ).join("");
+  }
+  function maskHtmlMathContexts(source) {
+    const text = String(source != null ? source : "");
+    const htmlIndex = buildHtmlTagEndIndex(text);
+    const masked = [];
+    let cursor = 0;
+    let plainStart = 0;
+    while (cursor < text.length) {
+      if (text[cursor] !== "<") {
+        cursor++;
+        continue;
+      }
+      const ignoredEnd = closingHtmlCodeTag(text, cursor, htmlIndex);
+      const markupEnd = ignoredEnd >= 0 ? ignoredEnd : htmlBoundaryAt(text, cursor, htmlIndex);
+      if (markupEnd < 0) {
+        cursor++;
+        continue;
+      }
+      masked.push(text.slice(plainStart, cursor));
+      masked.push(text.slice(cursor, markupEnd).replace(/[^\r\n]/g, " "));
+      cursor = markupEnd;
+      plainStart = cursor;
+    }
+    masked.push(text.slice(plainStart));
+    return masked.join("");
+  }
+  function maskMarkdownInlineContexts(source, replacement = "x") {
+    const text = String(source != null ? source : "");
+    const protectedText = maskRanges(
+      text,
+      resolveInlineMathAndCodeRanges(text).active,
+      replacement
+    );
+    return maskHtmlMathContexts(protectedText);
+  }
+
+  // src/shared/occlusion.js
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+  function toFiniteNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+  function clampOcclusionPercent(value) {
+    const number = toFiniteNumber(value);
+    if (number === null) return null;
+    return clamp(number, 0, 100);
+  }
+  function parseOcclusionRegion(line) {
+    const match = /^\s*(\d{1,4})\s*[.)]?\s+(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*(?:[ \t]+(.+?))?\s*$/.exec(
+      String(line != null ? line : "")
+    );
+    if (!match) return null;
+    const order = Number(match[1]);
+    const x = clampOcclusionPercent(match[2]);
+    const y = clampOcclusionPercent(match[3]);
+    const width = clampOcclusionPercent(match[4]);
+    const height = clampOcclusionPercent(match[5]);
+    if (![x, y, width, height].every((value) => value !== null)) return null;
+    if (width <= 0 || height <= 0) return null;
+    return {
+      order: Number.isFinite(order) ? order : 0,
+      x,
+      y,
+      width,
+      height,
+      label: (match[6] || "").trim()
+    };
+  }
+
+  // src/shared/syntax-tools.js
+  (function(root, factory) {
+    const api = factory();
+    if (root) {
+      root.QuizifySyntax = api;
+    }
+  })(typeof globalThis !== "undefined" ? globalThis : window, function() {
+    const snippets = [
+      [t("editor.snippet.fitb"), t("editor.snippet.fitb.template"), t("editor.placeholder.answer")],
+      [t("editor.snippet.choice"), t("editor.snippet.choice.template"), t("editor.placeholder.option_a")],
+      [t("editor.snippet.reveal"), t("editor.snippet.reveal.template"), t("editor.placeholder.question")],
+      [t("editor.snippet.annotation"), t("editor.snippet.annotation.template"), t("editor.placeholder.content")],
+      [t("editor.snippet.collapse"), t("editor.snippet.collapse.template"), t("editor.placeholder.title")],
+      [t("editor.snippet.tabs"), t("editor.snippet.tabs.template"), t("editor.placeholder.tab_one")],
+      [t("editor.snippet.audio"), t("editor.snippet.audio.template"), t("editor.placeholder.audio_title")],
+      [t("editor.snippet.recite"), t("editor.snippet.recite.template"), t("editor.placeholder.recite_text")],
+      [t("editor.snippet.occlusion"), t("editor.snippet.occlusion.template"), t("editor.placeholder.occlusion")]
+    ];
+    const markdownActions = [
+      {
+        id: "bold",
+        label: t("editor.action.bold"),
+        button: "B",
+        shortcut: "Ctrl+B",
+        key: "b",
+        prefix: "**",
+        suffix: "**",
+        placeholder: t("editor.placeholder.bold")
+      },
+      {
+        id: "italic",
+        label: t("editor.action.italic"),
+        button: "I",
+        shortcut: "Ctrl+I",
+        key: "i",
+        prefix: "*",
+        suffix: "*",
+        placeholder: t("editor.placeholder.italic")
+      },
+      {
+        id: "inline-code",
+        label: t("editor.action.inline_code"),
+        button: "</>",
+        shortcut: "Ctrl+`",
+        key: "`",
+        prefix: "`",
+        suffix: "`",
+        placeholder: t("editor.placeholder.code")
+      },
+      {
+        id: "link",
+        label: t("editor.action.link"),
+        button: "Link",
+        shortcut: "Ctrl+K",
+        key: "k",
+        prefix: "[",
+        suffix: "](url)",
+        placeholder: t("editor.placeholder.link_text")
+      },
+      {
+        id: "strikethrough",
+        label: t("editor.action.strikethrough"),
+        button: "S",
+        shortcut: "Ctrl+Shift+X",
+        key: "x",
+        shift: true,
+        prefix: "~~",
+        suffix: "~~",
+        placeholder: t("editor.placeholder.strikethrough")
+      },
+      {
+        id: "highlight",
+        label: t("editor.action.highlight"),
+        button: "==",
+        shortcut: "Ctrl+Shift+H",
+        key: "h",
+        shift: true,
+        prefix: "==",
+        suffix: "==",
+        placeholder: t("editor.placeholder.highlight")
+      },
+      {
+        id: "superscript",
+        label: t("editor.action.superscript"),
+        button: "X\xB2",
+        shortcut: "Ctrl+Shift+.",
+        code: "Period",
+        shift: true,
+        prefix: "^",
+        suffix: "^",
+        placeholder: t("editor.placeholder.superscript")
+      },
+      {
+        id: "subscript",
+        label: t("editor.action.subscript"),
+        button: "X\u2082",
+        shortcut: "Ctrl+Shift+,",
+        code: "Comma",
+        shift: true,
+        prefix: "~",
+        suffix: "~",
+        placeholder: t("editor.placeholder.subscript")
+      },
+      {
+        id: "github-alert",
+        label: t("editor.action.alert"),
+        button: "Alert",
+        shortcut: "Ctrl+Shift+A",
+        key: "a",
+        shift: true,
+        format: "alert",
+        placeholder: t("editor.placeholder.alert")
+      },
+      {
+        id: "heading",
+        label: t("editor.action.heading"),
+        button: "H1",
+        shortcut: "",
+        format: "heading",
+        placeholder: t("editor.placeholder.heading")
+      },
+      {
+        id: "blockquote",
+        label: t("editor.action.blockquote"),
+        button: "Quote",
+        shortcut: "",
+        format: "blockquote",
+        placeholder: t("editor.placeholder.quote")
+      },
+      {
+        id: "unordered-list",
+        label: t("editor.action.unordered_list"),
+        button: "\u2022 List",
+        shortcut: "",
+        format: "unordered-list",
+        placeholder: t("editor.placeholder.list_item")
+      },
+      {
+        id: "ordered-list",
+        label: t("editor.action.ordered_list"),
+        button: "1. List",
+        shortcut: "",
+        format: "ordered-list",
+        placeholder: t("editor.placeholder.list_item")
+      },
+      {
+        id: "code-block",
+        label: t("editor.action.code_block"),
+        button: "```",
+        shortcut: "",
+        format: "code-block",
+        placeholder: t("editor.placeholder.code")
+      },
+      {
+        id: "image",
+        label: t("editor.action.image"),
+        button: "Image",
+        shortcut: "",
+        format: "image",
+        placeholder: t("editor.placeholder.image_alt")
+      },
+      {
+        id: "table",
+        label: t("editor.action.table"),
+        button: "Table",
+        shortcut: "",
+        format: "table",
+        placeholder: t("editor.placeholder.content")
+      }
+    ];
+    function formatMarkdownAction(action, selection = "") {
+      const selected = String(selection || "");
+      const content = selected || (action == null ? void 0 : action.placeholder) || "";
+      if ((action == null ? void 0 : action.format) === "alert") {
+        const alert = /^(?:>|&gt;) \[!NOTE\]\n([\s\S]*?)\n?$/.exec(selected);
+        if (alert) {
+          return alert[1].split(/\r?\n/).map((line) => line.replace(/^(?:>|&gt;) ?/, "")).join("\n");
+        }
+        const quoted = content.split(/\r?\n/).map((line) => line ? `> ${line}` : ">").join("\n");
+        return `> [!NOTE]
+${quoted}
+`;
+      }
+      if ((action == null ? void 0 : action.format) === "heading") {
+        return /^#{1,6}\s+/.test(selected) ? selected.replace(/^#{1,6}\s+/, "") : `# ${content}`;
+      }
+      if ((action == null ? void 0 : action.format) === "blockquote") {
+        const lines = content.split(/\r?\n/);
+        const quoted = selected && lines.every((line) => !line || /^(?:>|&gt;) ?/.test(line));
+        return quoted ? lines.map((line) => line.replace(/^(?:>|&gt;) ?/, "")).join("\n") : `${lines.map((line) => `> ${line}`).join("\n")}
+`;
+      }
+      if ((action == null ? void 0 : action.format) === "unordered-list") {
+        const lines = content.split(/\r?\n/);
+        const listed = selected && lines.every((line) => !line || /^[-*+]\s+/.test(line));
+        return listed ? lines.map((line) => line.replace(/^[-*+]\s+/, "")).join("\n") : `${lines.map((line) => `- ${line}`).join("\n")}
+`;
+      }
+      if ((action == null ? void 0 : action.format) === "ordered-list") {
+        const lines = content.split(/\r?\n/);
+        const listed = selected && lines.every((line) => !line || /^\d+[.)]\s+/.test(line));
+        return listed ? lines.map((line) => line.replace(/^\d+[.)]\s+/, "")).join("\n") : `${lines.map((line, index) => `${index + 1}. ${line}`).join("\n")}
+`;
+      }
+      if ((action == null ? void 0 : action.format) === "code-block") {
+        const fenced = /^```[^\n]*\n([\s\S]*?)\n```\s*$/.exec(selected);
+        return fenced ? fenced[1] : `\`\`\`
+${content}
 \`\`\`
-`}if((c==null?void 0:c.format)==="image"){let d=/^!\[([\s\S]*)\]\(url\)$/.exec(a);return d?d[1]:`![${g}](url)`}return(c==null?void 0:c.format)==="table"?f("editor.table.template",{content:g}):a&&(c!=null&&c.prefix)&&(c!=null&&c.suffix)&&a.startsWith(c.prefix)&&a.endsWith(c.suffix)&&a.length>=c.prefix.length+c.suffix.length?a.slice(c.prefix.length,a.length-c.suffix.length):`${(c==null?void 0:c.prefix)||""}${g}${(c==null?void 0:c.suffix)||""}`}function e(c,h,a,g=1){return{severity:c,message:h,line:a,column:g}}function r(c){let h=String(c||""),a=new Uint32Array(h.length+1),g=[0],d=0;for(let u=0;u<h.length;u++)a[u]=d,h.charCodeAt(u)===10&&(d++,g.push(u+1));return a[h.length]=d,u=>{let b=Number.isFinite(u)?Math.trunc(u):0,z=Math.max(0,Math.min(h.length,b)),L=a[z];return{line:L+1,column:z-g[L]+1}}}function l(c){return gt(c)}function o(c,h){let a=String(c||""),g=String(h||"");if(a.length!==g.length)return g;let d=g.split(""),u=[],b=[/\{\{[\s\S]*?\}\}/g,/\[\[[\s\S]*?\]\]/g,/\[(.*?)\]\^\((.*?)\)\^/gs];function z($){let O=0;for(;$>0&&a[--$]==="\\";)O++;return O%2===1}function L($,O){let R=g.slice($,O);for(let T of b){T.lastIndex=0;for(let J of R.matchAll(T)){let Y=$+J.index,bt=Y+J[0].length;for(let B=Y;B<bt;B++)d[B]!=="\r"&&d[B]!==`
-`&&(d[B]="x")}}}let D=/^ {0,3}\[((?:\\[\s\S]|[^\[\]\\])+?)\]:[ \t]*(?:<[^>\r\n]*>|[^\s<>]+)(?:[ \t]+(?:"(?:\\.|[^"\\\r\n])*"|'[^'\r\n]*'|\([^()\r\n]*\)))?[ \t]*(?=\r?$)/gm;for(let $ of a.matchAll(D)){let O=$.index,R=O+$[0].length;for(let T=O;T<R;T++)d[T]!=="\r"&&d[T]!==`
-`&&(d[T]="x")}for(let $=0;$<a.length;$++){if(a[$]==="\\"){$++;continue}if(a[$]==="["){u.push($);continue}if(a[$]!=="]"||!u.length)continue;let O=u.pop();g[O]===a[O]||g[$]===a[$]||O>0&&a[O-1]==="!"&&!z(O-1)||a.slice(Math.max(0,O-6),O)==="!audio"&&!z(O-6)||L(O+1,$)}return d.join("")}function s(c){let h=l(c),a=xt(h);return o(h,a)}function p(c){let h=[],a=new Set;for(let g of c){let d=/^([A-Za-z])\. ?(.+)$/.exec(g.text.trim());if(!d)continue;let u=d[1].toUpperCase();h.push({letter:u,text:d[2],line:g.line,duplicate:a.has(u)}),a.add(u)}return h}function w(c,h,a){for(let g of c.matchAll(/\{\{(.*?)\}\}/gs)){if(g[1].trim())continue;let d=a(g.index);h.push(e("warning",f("syntax.empty_fitb"),d.line,d.column))}}function x(c,h,a){for(let g of c.matchAll(/\[\[([\s\S]*?)\]\]/g)){let d=g[1],u=a(g.index);if(!d.includes("||")){h.push(e("error",f("syntax.reveal_missing_separator"),u.line,u.column));continue}let[b,z]=d.split("||");b.trim()||h.push(e("warning",f("syntax.empty_reveal_question"),u.line,u.column)),z.trim()||h.push(e("warning",f("syntax.empty_reveal_answer"),u.line,u.column))}}function A(c,h,a){for(let g of c.matchAll(/\[(.*?)\]\^\((.*?)\)\^/gs)){let d=a(g.index);g[1].trim()||h.push(e("warning",f("syntax.empty_annotation_text"),d.line,d.column)),g[2].trim()||h.push(e("warning",f("syntax.empty_annotation_note"),d.line,d.column))}}function C(c,h,a){for(let g of c.matchAll(/!audio\[(.*?)\]\((.*?)\)/g)){let d=a(g.index);g[1].trim()||h.push(e("warning",f("syntax.empty_audio_title"),d.line,d.column)),g[2].trim()||h.push(e("error",f("syntax.empty_audio_url"),d.line,d.column))}}function m(c,h){let a=0;for(;a<c.length;){if(!/^;;;\s*$/.test(c[a])){a++;continue}let g=a+1,d=[];for(a++;a<c.length&&!/^;;;[A-Za-z]*\s*$/.test(c[a].trim());)d.push({text:c[a],line:a+1}),a++;if(a>=c.length){h.push(e("error",f("syntax.choice_missing_answer_line"),g));return}let u=/^;;;([A-Za-z]*)\s*$/.exec(c[a].trim()),b=u?u[1].toUpperCase():"",z=Z(b).split("").filter(Boolean),L=p(d),D=new Set(L.map($=>$.letter));L.length<2&&h.push(e("error",f("syntax.choice_too_few_options"),g)),z.length||h.push(e("error",f("syntax.choice_empty_answer"),a+1)),b&&b.length!==Z(b).length&&h.push(e("warning",f("syntax.choice_duplicate_answers"),a+1));for(let $ of z)D.has($)||h.push(e("error",f("syntax.choice_missing_option",{answer:$}),a+1));for(let $ of L)$.duplicate&&h.push(e("error",f("syntax.choice_duplicate_option",{option:$.letter}),$.line)),$.text.trim()||h.push(e("warning",f("syntax.choice_empty_option",{option:$.letter}),$.line));a++}}function y(c,h){let a=[],g=null,d=0;c.forEach((u,b)=>{let z=b+1,L=u.trim();/^:::\s+\S/.test(L)?a.push(z):/^:::\s*$/.test(L)&&(a.length?a.pop():h.push(e("error",f("syntax.collapse_extra_close"),z))),/^===\s+\S/.test(L)?(g===null&&(g=z),d++):/^===\s*$/.test(L)&&(g===null?h.push(e("error",f("syntax.tabs_extra_close"),z)):d<2?(h.push(e("warning",f("syntax.tabs_too_few"),g)),g=null,d=0):(g=null,d=0))});for(let u of a)h.push(e("error",f("syntax.collapse_missing_close"),u));g!==null&&h.push(e("error",f("syntax.tabs_missing_close"),g))}function k(c,h){let a=[];c.forEach((g,d)=>{let u=d+1,b=g.trim(),z=/^::::\s+recite(?:\s+(.*?))?\s*$/i.exec(b);if(z){let L={line:u,markers:0},D=new Set;String(z[1]||"").split(/\s+/).filter(Boolean).forEach($=>{let O=/^([A-Za-z][\w-]*)=(\S+)$/.exec($);if(!O){h.push(e("warning",f("syntax.recite_invalid_option",{option:$}),u));return}let R=O[1].toLowerCase(),T=O[2].toLowerCase();D.has(R)&&h.push(e("warning",f("syntax.recite_duplicate_option",{option:R}),u)),D.add(R),R==="mask"&&(!/^\d{1,3}$/.test(T)||Number(T)>100)?h.push(e("error",f("syntax.recite_invalid_mask"),u)):R==="mode"&&!["auto","manual","mixed"].includes(T)?h.push(e("error",f("syntax.recite_invalid_mode"),u)):["mask","mode"].includes(R)||h.push(e("warning",f("syntax.recite_unknown_option",{option:R}),u))}),a.push(L);return}if(/^::::\s*$/.test(b)){if(!a.length){h.push(e("error",f("syntax.recite_extra_close"),u));return}let L=a.pop();L.markers%2!==0&&h.push(e("error",f("syntax.recite_unpaired_group"),L.line));return}if(a.length){let L=(g.match(/%%/g)||[]).length;a[a.length-1].markers+=L}}),a.forEach(g=>{h.push(e("error",f("syntax.recite_missing_close"),g.line))})}function E(c){let h=String(c||""),a=s(h),g=r(h),d=[],u=a.split(/\r?\n/);return w(a,d,g),x(a,d,g),A(a,d,g),C(a,d,g),m(u,d),y(u,d),k(u,d),d.sort((b,z)=>b.line-z.line||b.column-z.column),d}function _(c,h=40){let a=String(c||"").replace(/\s+/g," ").trim();return a.length>h?`${a.slice(0,h-1)}\u2026`:a}function S(c,h,a,g={},d=1){return{kind:c,title:h,line:a,meta:g,_sourceColumn:d}}function j(c,h,a){let g=String(c||"");for(let d of g.matchAll(/\{\{(.*?)\}\}/gs)){let u=a(d.index),b=_(d[1]||f("syntax.preview.empty_answer"));h.push(S("fitb",f("editor.snippet.fitb"),u.line,{answer:b},u.column))}for(let d of g.matchAll(/\[\[([\s\S]*?)\]\]/g)){let u=a(d.index),[b="",z=""]=d[1].split("||");h.push(S("reveal",f("editor.snippet.reveal"),u.line,{question:_(b||f("syntax.preview.empty_question")),answer:_(z||f("syntax.preview.empty_answer"))},u.column))}for(let d of g.matchAll(/\[(.*?)\]\^\((.*?)\)\^/gs)){let u=a(d.index);h.push(S("annotation",f("editor.snippet.annotation"),u.line,{text:_(d[1]||f("syntax.preview.empty_text")),note:_(d[2]||f("syntax.preview.empty_note"))},u.column))}for(let d of g.matchAll(/!audio\[(.*?)\]\((.*?)\)/g)){let u=a(d.index);h.push(S("audio",f("editor.snippet.audio"),u.line,{title:_(d[1]||f("syntax.preview.untitled")),url:_(d[2]||f("syntax.preview.no_file"))},u.column))}}function q(c,h){let a=0;for(;a<c.length;){if(!/^;;;\s*$/.test(c[a])){a++;continue}let g=a+1,d=[];for(a++;a<c.length&&!/^;;;[A-Za-z]*\s*$/.test(c[a].trim());)d.push({text:c[a],line:a+1}),a++;let u=a<c.length?/^;;;([A-Za-z]*)\s*$/.exec(c[a].trim()):null,b=p(d).map(L=>L.letter),z=u?Z(u[1]):"";h.push(S(z.length===1?"single":"multiple",f(z.length===1?"syntax.preview.single":"syntax.preview.multiple"),g,{options:b.join("")||f("syntax.preview.no_options"),answers:z||f("syntax.preview.no_answer")})),a++}}function I(c,h){c.forEach((a,g)=>{let d=g+1,u=/^:::\s+(.+?)\s*$/.exec(a.trim());u&&h.push(S("collapse",f("editor.snippet.collapse"),d,{title:_(u[1])}));let b=/^::::\s+recite(?:\s+(.*?))?\s*$/i.exec(a.trim());if(b){let L=Object.fromEntries(String(b[1]||"").split(/\s+/).map(D=>D.split("=",2)).filter(D=>D.length===2));h.push(S("recite",f("editor.snippet.recite"),d,{mask:L.mask||"40",mode:L.mode||"mixed"}))}let z=/^===\s+(.+?)\s*$/.exec(a.trim());z&&h.push(S("tab",f("editor.snippet.tabs"),d,{title:_(z[1])}))})}function M(c){let h=String(c||""),a=s(h),g=a.split(/\r?\n/),d=r(h),u=[];return j(a,u,d),q(g,u),I(g,u),u.sort((b,z)=>b.line-z.line||b._sourceColumn-z._sourceColumn),u.map(({_sourceColumn:b,...z})=>z)}function v(c){let h=c.filter(u=>u.severity==="error").length,a=c.filter(u=>u.severity==="warning").length;if(!h&&!a)return f("syntax.summary.valid");let g=Q("syntax.summary.errors",h),d=Q("syntax.summary.warnings",a);return h&&a?f("syntax.summary.combined",{errors:g,warnings:d}):h?g:d}return{snippets:t,markdownActions:n,formatMarkdownAction:i,analyzeQuizifySyntax:E,collectQuizifyPreview:M,summarizeDiagnostics:v}});})();
+`;
+      }
+      if ((action == null ? void 0 : action.format) === "image") {
+        const image = /^!\[([\s\S]*)\]\(url\)$/.exec(selected);
+        return image ? image[1] : `![${content}](url)`;
+      }
+      if ((action == null ? void 0 : action.format) === "table") {
+        return t("editor.table.template", { content });
+      }
+      if (selected && (action == null ? void 0 : action.prefix) && (action == null ? void 0 : action.suffix) && selected.startsWith(action.prefix) && selected.endsWith(action.suffix) && selected.length >= action.prefix.length + action.suffix.length) {
+        return selected.slice(action.prefix.length, selected.length - action.suffix.length);
+      }
+      return `${(action == null ? void 0 : action.prefix) || ""}${content}${(action == null ? void 0 : action.suffix) || ""}`;
+    }
+    function diagnostic(severity, message, line, column = 1) {
+      return { severity, message, line, column };
+    }
+    function createLineLocator(source) {
+      const text = String(source || "");
+      const lineByOffset = new Uint32Array(text.length + 1);
+      const lineStarts = [0];
+      let lineIndex = 0;
+      for (let index = 0; index < text.length; index++) {
+        lineByOffset[index] = lineIndex;
+        if (text.charCodeAt(index) === 10) {
+          lineIndex++;
+          lineStarts.push(index + 1);
+        }
+      }
+      lineByOffset[text.length] = lineIndex;
+      return (index) => {
+        const numeric = Number.isFinite(index) ? Math.trunc(index) : 0;
+        const offset = Math.max(0, Math.min(text.length, numeric));
+        const locatedLine = lineByOffset[offset];
+        return {
+          line: locatedLine + 1,
+          column: offset - lineStarts[locatedLine] + 1
+        };
+      };
+    }
+    function maskFencedCode(source) {
+      return maskMarkdownFencedCode(source);
+    }
+    function maskSafeLinkInteractiveLabels(source, protectedSource) {
+      const text = String(source || "");
+      const masked = String(protectedSource || "");
+      if (text.length !== masked.length) return masked;
+      const output = masked.split("");
+      const brackets = [];
+      const interactivePatterns = [
+        /\{\{[\s\S]*?\}\}/g,
+        /\[\[[\s\S]*?\]\]/g,
+        /\[(.*?)\]\^\((.*?)\)\^/gs
+      ];
+      function escapedAt2(index) {
+        let slashes = 0;
+        while (index > 0 && text[--index] === "\\") slashes++;
+        return slashes % 2 === 1;
+      }
+      function maskLabelRange(start, end) {
+        const label = masked.slice(start, end);
+        for (const pattern of interactivePatterns) {
+          pattern.lastIndex = 0;
+          for (const match of label.matchAll(pattern)) {
+            const matchStart = start + match.index;
+            const matchEnd = matchStart + match[0].length;
+            for (let index = matchStart; index < matchEnd; index++) {
+              if (output[index] !== "\r" && output[index] !== "\n") {
+                output[index] = "x";
+              }
+            }
+          }
+        }
+      }
+      const referenceDefinition = /^ {0,3}\[((?:\\[\s\S]|[^\[\]\\])+?)\]:[ \t]*(?:<[^>\r\n]*>|[^\s<>]+)(?:[ \t]+(?:"(?:\\.|[^"\\\r\n])*"|'[^'\r\n]*'|\([^()\r\n]*\)))?[ \t]*(?=\r?$)/gm;
+      for (const match of text.matchAll(referenceDefinition)) {
+        const start = match.index;
+        const end = start + match[0].length;
+        for (let index = start; index < end; index++) {
+          if (output[index] !== "\r" && output[index] !== "\n") {
+            output[index] = "x";
+          }
+        }
+      }
+      for (let index = 0; index < text.length; index++) {
+        if (text[index] === "\\") {
+          index++;
+          continue;
+        }
+        if (text[index] === "[") {
+          brackets.push(index);
+          continue;
+        }
+        if (text[index] !== "]" || !brackets.length) continue;
+        const labelOpen = brackets.pop();
+        if (masked[labelOpen] === text[labelOpen] || masked[index] === text[index]) {
+          continue;
+        }
+        if (labelOpen > 0 && text[labelOpen - 1] === "!" && !escapedAt2(labelOpen - 1) || text.slice(Math.max(0, labelOpen - 6), labelOpen) === "!audio" && !escapedAt2(labelOpen - 6)) {
+          continue;
+        }
+        maskLabelRange(labelOpen + 1, index);
+      }
+      return output.join("");
+    }
+    function protectAuthoringSyntax(source) {
+      const fenced = maskFencedCode(source);
+      const inline = maskMarkdownInlineContexts(fenced);
+      return maskSafeLinkInteractiveLabels(fenced, inline);
+    }
+    function choiceOptionsFromLines(lines) {
+      const options = [];
+      const seen = /* @__PURE__ */ new Set();
+      for (const optionLine of lines) {
+        const match = /^([A-Za-z])\. ?(.+)$/.exec(optionLine.text.trim());
+        if (!match) continue;
+        const letter = match[1].toUpperCase();
+        options.push({
+          letter,
+          text: match[2],
+          line: optionLine.line,
+          duplicate: seen.has(letter)
+        });
+        seen.add(letter);
+      }
+      return options;
+    }
+    function analyzeFillBlanks(source, diagnostics, locate) {
+      for (const match of source.matchAll(/\{\{(.*?)\}\}/gs)) {
+        if (match[1].trim()) continue;
+        const pos = locate(match.index);
+        diagnostics.push(diagnostic("warning", t("syntax.empty_fitb"), pos.line, pos.column));
+      }
+    }
+    function analyzeReveal(source, diagnostics, locate) {
+      for (const match of source.matchAll(/\[\[([\s\S]*?)\]\]/g)) {
+        const body = match[1];
+        const pos = locate(match.index);
+        if (!body.includes("||")) {
+          diagnostics.push(diagnostic("error", t("syntax.reveal_missing_separator"), pos.line, pos.column));
+          continue;
+        }
+        const [question, answer] = body.split("||");
+        if (!question.trim()) {
+          diagnostics.push(diagnostic("warning", t("syntax.empty_reveal_question"), pos.line, pos.column));
+        }
+        if (!answer.trim()) {
+          diagnostics.push(diagnostic("warning", t("syntax.empty_reveal_answer"), pos.line, pos.column));
+        }
+      }
+    }
+    function analyzeAnnotations(source, diagnostics, locate) {
+      for (const match of source.matchAll(/\[(.*?)\]\^\((.*?)\)\^/gs)) {
+        const pos = locate(match.index);
+        if (!match[1].trim()) {
+          diagnostics.push(diagnostic("warning", t("syntax.empty_annotation_text"), pos.line, pos.column));
+        }
+        if (!match[2].trim()) {
+          diagnostics.push(diagnostic("warning", t("syntax.empty_annotation_note"), pos.line, pos.column));
+        }
+      }
+    }
+    function analyzeAudio(source, diagnostics, locate) {
+      for (const match of source.matchAll(/!audio\[(.*?)\]\((.*?)\)/g)) {
+        const pos = locate(match.index);
+        if (!match[1].trim()) {
+          diagnostics.push(diagnostic("warning", t("syntax.empty_audio_title"), pos.line, pos.column));
+        }
+        if (!match[2].trim()) {
+          diagnostics.push(diagnostic("error", t("syntax.empty_audio_url"), pos.line, pos.column));
+        }
+      }
+    }
+    function analyzeChoiceBlocks(lines, diagnostics) {
+      let index = 0;
+      while (index < lines.length) {
+        if (!/^;;;\s*$/.test(lines[index])) {
+          index++;
+          continue;
+        }
+        const startLine = index + 1;
+        const optionLines = [];
+        index++;
+        while (index < lines.length && !/^;;;[A-Za-z]*\s*$/.test(lines[index].trim())) {
+          optionLines.push({ text: lines[index], line: index + 1 });
+          index++;
+        }
+        if (index >= lines.length) {
+          diagnostics.push(diagnostic("error", t("syntax.choice_missing_answer_line"), startLine));
+          return;
+        }
+        const close = /^;;;([A-Za-z]*)\s*$/.exec(lines[index].trim());
+        const rawAnswers = close ? close[1].toUpperCase() : "";
+        const answers = uniqueSortedLetters(rawAnswers).split("").filter(Boolean);
+        const options = choiceOptionsFromLines(optionLines);
+        const seen = new Set(options.map((option) => option.letter));
+        if (options.length < 2) {
+          diagnostics.push(diagnostic("error", t("syntax.choice_too_few_options"), startLine));
+        }
+        if (!answers.length) {
+          diagnostics.push(diagnostic("error", t("syntax.choice_empty_answer"), index + 1));
+        }
+        if (rawAnswers && rawAnswers.length !== uniqueSortedLetters(rawAnswers).length) {
+          diagnostics.push(diagnostic("warning", t("syntax.choice_duplicate_answers"), index + 1));
+        }
+        for (const answer of answers) {
+          if (!seen.has(answer)) {
+            diagnostics.push(diagnostic("error", t("syntax.choice_missing_option", { answer }), index + 1));
+          }
+        }
+        for (const option of options) {
+          if (option.duplicate) {
+            diagnostics.push(diagnostic("error", t("syntax.choice_duplicate_option", { option: option.letter }), option.line));
+          }
+          if (!option.text.trim()) {
+            diagnostics.push(diagnostic("warning", t("syntax.choice_empty_option", { option: option.letter }), option.line));
+          }
+        }
+        index++;
+      }
+    }
+    function analyzeContainers(lines, diagnostics) {
+      const collapseStack = [];
+      let tabStart = null;
+      let tabCount = 0;
+      lines.forEach((line, idx) => {
+        const lineNo = idx + 1;
+        const trimmed = line.trim();
+        if (/^:::\s+\S/.test(trimmed)) {
+          collapseStack.push(lineNo);
+        } else if (/^:::\s*$/.test(trimmed)) {
+          if (!collapseStack.length) {
+            diagnostics.push(diagnostic("error", t("syntax.collapse_extra_close"), lineNo));
+          } else {
+            collapseStack.pop();
+          }
+        }
+        if (/^===\s+\S/.test(trimmed)) {
+          if (tabStart === null) tabStart = lineNo;
+          tabCount++;
+        } else if (/^===\s*$/.test(trimmed)) {
+          if (tabStart === null) {
+            diagnostics.push(diagnostic("error", t("syntax.tabs_extra_close"), lineNo));
+          } else if (tabCount < 2) {
+            diagnostics.push(diagnostic("warning", t("syntax.tabs_too_few"), tabStart));
+            tabStart = null;
+            tabCount = 0;
+          } else {
+            tabStart = null;
+            tabCount = 0;
+          }
+        }
+      });
+      for (const lineNo of collapseStack) {
+        diagnostics.push(diagnostic("error", t("syntax.collapse_missing_close"), lineNo));
+      }
+      if (tabStart !== null) {
+        diagnostics.push(diagnostic("error", t("syntax.tabs_missing_close"), tabStart));
+      }
+    }
+    function analyzeReciteBlocks(lines, diagnostics) {
+      const stack = [];
+      const RECITE_OPTIONS = ["mask", "mode"];
+      const OCCLUSION_OPTIONS = ["url", "image", "src", "alt", "title"];
+      lines.forEach((line, idx) => {
+        const lineNo = idx + 1;
+        const trimmed = line.trim();
+        const opener = /^::::\s+([A-Za-z]+)(?:\s+(.*?))?\s*$/.exec(trimmed);
+        if (opener) {
+          const kind = opener[1].toLowerCase();
+          const entry = { line: lineNo, markers: 0, kind };
+          const seen = /* @__PURE__ */ new Set();
+          String(opener[2] || "").split(/\s+/).filter(Boolean).forEach((part) => {
+            const option = /^([A-Za-z][\w-]*)=(?:\S+)$/.exec(part);
+            if (!option) return;
+            seen.add(option[1].toLowerCase());
+          });
+          if (kind === "recite") {
+            String(opener[2] || "").split(/\s+/).filter(Boolean).forEach((part) => {
+              const option = /^([A-Za-z][\w-]*)=(\S+)$/.exec(part);
+              if (!option) {
+                diagnostics.push(diagnostic("warning", t("syntax.recite_invalid_option", { option: part }), lineNo));
+                return;
+              }
+              const key = option[1].toLowerCase();
+              const value = option[2].toLowerCase();
+              if (key === "mask" && (!/^\d{1,3}$/.test(value) || Number(value) > 100)) {
+                diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mask"), lineNo));
+              } else if (key === "mode" && !["auto", "manual", "mixed"].includes(value)) {
+                diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mode"), lineNo));
+              } else if (!RECITE_OPTIONS.includes(key)) {
+                diagnostics.push(diagnostic("warning", t("syntax.recite_unknown_option", { option: key }), lineNo));
+              }
+            });
+          } else if (kind === "occlusion") {
+            seen.forEach((key) => {
+              if (!OCCLUSION_OPTIONS.includes(key)) {
+                diagnostics.push(diagnostic("warning", t("syntax.occlusion_unknown_option", { option: key }), lineNo));
+              }
+            });
+          } else {
+            diagnostics.push(diagnostic("warning", t("syntax.unknown_container", { keyword: kind }), lineNo));
+          }
+          stack.push(entry);
+          return;
+        }
+        if (/^::::\s*$/.test(trimmed)) {
+          if (!stack.length) {
+            diagnostics.push(diagnostic("error", t("syntax.recite_extra_close"), lineNo));
+            return;
+          }
+          const entry = stack.pop();
+          if (entry.kind === "recite" && entry.markers % 2 !== 0) {
+            diagnostics.push(diagnostic("error", t("syntax.recite_unpaired_group"), entry.line));
+          }
+          return;
+        }
+        if (stack.length) {
+          const top = stack[stack.length - 1];
+          if (top.kind === "recite") {
+            top.markers += (line.match(/%%/g) || []).length;
+          } else if (top.kind === "occlusion" && /^\s*\d/.test(trimmed) && !parseOcclusionRegion(trimmed)) {
+            diagnostics.push(diagnostic("warning", t("syntax.occlusion_invalid_region"), lineNo));
+          }
+        }
+      });
+      stack.forEach((entry) => {
+        const key = entry.kind === "occlusion" ? "syntax.occlusion_missing_close" : "syntax.recite_missing_close";
+        diagnostics.push(diagnostic("error", t(key), entry.line));
+      });
+    }
+    function analyzeQuizifySyntax(source) {
+      const text = String(source || "");
+      const protectedText = protectAuthoringSyntax(text);
+      const locate = createLineLocator(text);
+      const diagnostics = [];
+      const lines = protectedText.split(/\r?\n/);
+      analyzeFillBlanks(protectedText, diagnostics, locate);
+      analyzeReveal(protectedText, diagnostics, locate);
+      analyzeAnnotations(protectedText, diagnostics, locate);
+      analyzeAudio(protectedText, diagnostics, locate);
+      analyzeChoiceBlocks(lines, diagnostics);
+      analyzeContainers(lines, diagnostics);
+      analyzeReciteBlocks(lines, diagnostics);
+      diagnostics.sort((a, b) => a.line - b.line || a.column - b.column);
+      return diagnostics;
+    }
+    function trimPreview(value, max = 40) {
+      const text = String(value || "").replace(/\s+/g, " ").trim();
+      return text.length > max ? `${text.slice(0, max - 1)}\u2026` : text;
+    }
+    function previewItem(kind, title, line, meta = {}, column = 1) {
+      return { kind, title, line, meta, _sourceColumn: column };
+    }
+    function collectInlinePreview(source, items, locate) {
+      const text = String(source || "");
+      for (const match of text.matchAll(/\{\{(.*?)\}\}/gs)) {
+        const pos = locate(match.index);
+        const answer = trimPreview(match[1] || t("syntax.preview.empty_answer"));
+        items.push(previewItem("fitb", t("editor.snippet.fitb"), pos.line, { answer }, pos.column));
+      }
+      for (const match of text.matchAll(/\[\[([\s\S]*?)\]\]/g)) {
+        const pos = locate(match.index);
+        const [question = "", answer = ""] = match[1].split("||");
+        items.push(previewItem("reveal", t("editor.snippet.reveal"), pos.line, {
+          question: trimPreview(question || t("syntax.preview.empty_question")),
+          answer: trimPreview(answer || t("syntax.preview.empty_answer"))
+        }, pos.column));
+      }
+      for (const match of text.matchAll(/\[(.*?)\]\^\((.*?)\)\^/gs)) {
+        const pos = locate(match.index);
+        items.push(previewItem("annotation", t("editor.snippet.annotation"), pos.line, {
+          text: trimPreview(match[1] || t("syntax.preview.empty_text")),
+          note: trimPreview(match[2] || t("syntax.preview.empty_note"))
+        }, pos.column));
+      }
+      for (const match of text.matchAll(/!audio\[(.*?)\]\((.*?)\)/g)) {
+        const pos = locate(match.index);
+        items.push(previewItem("audio", t("editor.snippet.audio"), pos.line, {
+          title: trimPreview(match[1] || t("syntax.preview.untitled")),
+          url: trimPreview(match[2] || t("syntax.preview.no_file"))
+        }, pos.column));
+      }
+    }
+    function collectChoicePreview(lines, items) {
+      let index = 0;
+      while (index < lines.length) {
+        if (!/^;;;\s*$/.test(lines[index])) {
+          index++;
+          continue;
+        }
+        const startLine = index + 1;
+        const optionLines = [];
+        index++;
+        while (index < lines.length && !/^;;;[A-Za-z]*\s*$/.test(lines[index].trim())) {
+          optionLines.push({ text: lines[index], line: index + 1 });
+          index++;
+        }
+        const close = index < lines.length ? /^;;;([A-Za-z]*)\s*$/.exec(lines[index].trim()) : null;
+        const options = choiceOptionsFromLines(optionLines).map((option) => option.letter);
+        const answers = close ? uniqueSortedLetters(close[1]) : "";
+        items.push(previewItem(answers.length === 1 ? "single" : "multiple", t(answers.length === 1 ? "syntax.preview.single" : "syntax.preview.multiple"), startLine, {
+          options: options.join("") || t("syntax.preview.no_options"),
+          answers: answers || t("syntax.preview.no_answer")
+        }));
+        index++;
+      }
+    }
+    function collectContainerPreview(lines, items) {
+      lines.forEach((line, idx) => {
+        const lineNo = idx + 1;
+        const collapse = /^:::\s+(.+?)\s*$/.exec(line.trim());
+        if (collapse) {
+          items.push(previewItem("collapse", t("editor.snippet.collapse"), lineNo, {
+            title: trimPreview(collapse[1])
+          }));
+        }
+        const occlusion = /^::::\s+occlusion(?:\s+(.*?))?\s*$/i.exec(line.trim());
+        if (occlusion) {
+          const url = /url\s*=\s*"([^"]+)"/i.exec(occlusion[1] || "");
+          items.push(previewItem("occlusion", t("editor.snippet.occlusion"), lineNo, {
+            image: url && url[1] || t("syntax.preview.no_file"),
+            regions: ""
+          }));
+        }
+        const recite = /^::::\s+recite(?:\s+(.*?))?\s*$/i.exec(line.trim());
+        if (recite) {
+          const options = Object.fromEntries(
+            String(recite[1] || "").split(/\s+/).map((part) => part.split("=", 2)).filter((pair) => pair.length === 2)
+          );
+          items.push(previewItem("recite", t("editor.snippet.recite"), lineNo, {
+            mask: options.mask || "40",
+            mode: options.mode || "mixed"
+          }));
+        }
+        const tab = /^===\s+(.+?)\s*$/.exec(line.trim());
+        if (tab) {
+          items.push(previewItem("tab", t("editor.snippet.tabs"), lineNo, {
+            title: trimPreview(tab[1])
+          }));
+        }
+      });
+    }
+    function collectQuizifyPreview(source) {
+      const text = String(source || "");
+      const protectedText = protectAuthoringSyntax(text);
+      const lines = protectedText.split(/\r?\n/);
+      const locate = createLineLocator(text);
+      const items = [];
+      collectInlinePreview(protectedText, items, locate);
+      collectChoicePreview(lines, items);
+      collectContainerPreview(lines, items);
+      items.sort((a, b) => a.line - b.line || a._sourceColumn - b._sourceColumn);
+      return items.map(({ _sourceColumn, ...item }) => item);
+    }
+    function summarizeDiagnostics(diagnostics) {
+      const errors = diagnostics.filter((item) => item.severity === "error").length;
+      const warnings = diagnostics.filter((item) => item.severity === "warning").length;
+      if (!errors && !warnings) return t("syntax.summary.valid");
+      const errorSummary = tn("syntax.summary.errors", errors);
+      const warningSummary = tn("syntax.summary.warnings", warnings);
+      if (errors && warnings) {
+        return t("syntax.summary.combined", {
+          errors: errorSummary,
+          warnings: warningSummary
+        });
+      }
+      return errors ? errorSummary : warningSummary;
+    }
+    return {
+      snippets,
+      markdownActions,
+      formatMarkdownAction,
+      analyzeQuizifySyntax,
+      collectQuizifyPreview,
+      summarizeDiagnostics
+    };
+  });
+})();
 if (typeof module === 'object' && module.exports) module.exports = globalThis.QuizifySyntax;

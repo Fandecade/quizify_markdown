@@ -418,5 +418,23 @@
   "editor.preview_focus_hint": "聚焦 Front 或 Back 字段后，这里会显示渲染结果。",
   "editor.preview_select_field": "请先聚焦要预览的字段。",
   "editor.preview_too_large": "无法预览：当前字段超过 512 KiB 安全上限。",
-  "editor.preview_failed": "预览失败：{error}"
+  "editor.preview_failed": "预览失败：{error}",
+  "review.occlusion.region": {
+    "one": "遮挡 {order}：{label}",
+    "other": "遮挡 {order}：{label}"
+  },
+  "review.occlusion.missing_image": "图片遮挡块：没有指定图片。请添加 url=\"文件名.png\"，或在块内放入 ![](文件名.png)。",
+  "review.occlusion.count": {
+    "one": "{count} 个遮挡区域",
+    "other": "{count} 个遮挡区域"
+  },
+  "editor.snippet.occlusion": "图片遮挡",
+  "editor.snippet.occlusion.template": ":::: occlusion url=\"文件名.png\"\n1. 10,10,30,20\n2. 45,50,30,20\n::::\n",
+  "editor.placeholder.occlusion": "文件名.png",
+  "menu.occlusion_tool": "图片遮挡：生成坐标…",
+  "editor.preview_meta.occlusion": "图片：{image}；区域：{regions}",
+  "syntax.occlusion_unknown_option": "图片遮挡块无法识别选项“{option}”。",
+  "syntax.unknown_container": "四冒号块“{keyword}”不是 Quizify 结构，将按普通文本显示。",
+  "syntax.occlusion_invalid_region": "这一行看起来是遮挡区域，但格式无效。请使用“序号. x,y,w,h [标签]”。",
+  "syntax.occlusion_missing_close": "该图片遮挡块缺少结束的 :::: 行。"
 }

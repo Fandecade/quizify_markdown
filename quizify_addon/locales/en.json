@@ -441,5 +441,23 @@
   "editor.preview_focus_hint": "Focus the Front or Back field to see its rendered preview here.",
   "editor.preview_select_field": "Focus the field you want to preview first.",
   "editor.preview_too_large": "This field cannot be previewed because it exceeds the 512 KiB safety limit.",
-  "editor.preview_failed": "Preview failed: {error}"
+  "editor.preview_failed": "Preview failed: {error}",
+  "review.occlusion.region": {
+    "one": "Region {order}: {label}",
+    "other": "Region {order}: {label}"
+  },
+  "review.occlusion.missing_image": "Image occlusion block: no image was specified. Add url=\"file.png\" or put ![](file.png) inside the block.",
+  "review.occlusion.count": {
+    "one": "{count} masked region",
+    "other": "{count} masked regions"
+  },
+  "editor.snippet.occlusion": "Occlusion",
+  "editor.snippet.occlusion.template": ":::: occlusion url=\"file.png\"\n1. 10,10,30,20\n2. 45,50,30,20\n::::\n",
+  "editor.placeholder.occlusion": "file.png",
+  "menu.occlusion_tool": "Image occlusion: build coordinates…",
+  "editor.preview_meta.occlusion": "Image: {image}; regions: {regions}",
+  "syntax.occlusion_unknown_option": "The occlusion block does not recognize the option \"{option}\".",
+  "syntax.unknown_container": "The four-colon block \"{keyword}\" is not a Quizify structure; it is shown as plain text.",
+  "syntax.occlusion_invalid_region": "This looks like an occlusion region line but is not valid. Use \"order. x,y,w,h [label]\".",
+  "syntax.occlusion_missing_close": "This occlusion block is missing its closing :::: line."
 }

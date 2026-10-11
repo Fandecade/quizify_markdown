@@ -487,5 +487,27 @@
   "editor.preview_focus_hint": "Выберите поле Front или Back, чтобы увидеть здесь результат.",
   "editor.preview_select_field": "Сначала выберите поле для предпросмотра.",
   "editor.preview_too_large": "Предпросмотр недоступен: поле превышает безопасный предел в 512 КиБ.",
-  "editor.preview_failed": "Не удалось выполнить предпросмотр: {error}"
+  "editor.preview_failed": "Не удалось выполнить предпросмотр: {error}",
+  "review.occlusion.region": {
+    "one": "Область {order}: {label}",
+    "few": "Область {order}: {label}",
+    "many": "Область {order}: {label}",
+    "other": "Область {order}: {label}"
+  },
+  "review.occlusion.missing_image": "Блок маскирования изображения: изображение не указано. Добавьте url=\"файл.png\" или ![](файл.png) внутри блока.",
+  "review.occlusion.count": {
+    "one": "{count} скрытая область",
+    "few": "{count} скрытые области",
+    "many": "{count} скрытых областей",
+    "other": "{count} скрытых областей"
+  },
+  "editor.snippet.occlusion": "Маскирование",
+  "editor.snippet.occlusion.template": ":::: occlusion url=\"файл.png\"\n1. 10,10,30,20\n2. 45,50,30,20\n::::\n",
+  "editor.placeholder.occlusion": "файл.png",
+  "menu.occlusion_tool": "Маскирование изображения: создать координаты…",
+  "editor.preview_meta.occlusion": "Изображение: {image}; области: {regions}",
+  "syntax.occlusion_unknown_option": "Блок маскирования не распознаёт параметр «{option}».",
+  "syntax.unknown_container": "Блок с четырьмя двоеточиями «{keyword}» не является структурой Quizify и будет показан как обычный текст.",
+  "syntax.occlusion_invalid_region": "Строка похожа на область маскирования, но неверна. Используйте «порядок. x,y,w,h [метка]».",
+  "syntax.occlusion_missing_close": "В этом блоке маскирования отсутствует закрывающая строка ::::."
 }

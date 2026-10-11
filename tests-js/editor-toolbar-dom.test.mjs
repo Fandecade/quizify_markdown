@@ -130,7 +130,7 @@ test("real DOM toolbar keeps native fields visible and scopes plain text and sho
   const snippetFixtures = globalThis.QuizifySyntax.snippets;
   const markdownFixtures = globalThis.QuizifySyntax.markdownActions;
   assert.equal(markdownFixtures.length, 16, "the production toolbar needs all Markdown actions");
-  assert.equal(snippetFixtures.length, 8, "the production toolbar needs all Quizify actions");
+  assert.equal(snippetFixtures.length, 9, "the production toolbar needs all Quizify actions");
 
   document.querySelector("#outside").focus();
   await import(`../src/editor/legacy-editor.js?dom-test=${Date.now()}`);
@@ -255,7 +255,7 @@ test("real DOM toolbar keeps native fields visible and scopes plain text and sho
     directInspector.querySelector("summary"),
     directPreview.querySelector("summary")
   ];
-  assert.equal(visualControls.length, 26);
+  assert.equal(visualControls.length, 27);
   visualControls.forEach((control) => {
     assert(control.classList.contains("quizify-tool-button"));
     assert.match(

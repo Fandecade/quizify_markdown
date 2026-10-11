@@ -95,6 +95,22 @@ Quizify 读取 Anki 当前界面语言，并在中文、英文和俄文之间自
 
 AnkiDroid 和 AnkiMobile 不能直接安装桌面加载项。请先在 Desktop 安装或升级、打开对应 profile、重新同步媒体和模板并完成 Anki 同步；移动端完成包含媒体的同步后，强制关闭并重新打开客户端，避免复用升级前已打开的 WebView 资源。
 
+## 在手机端使用（`.apkg`）
+
+AnkiDroid 和 AnkiMobile 不能安装桌面加载项。要在手机上使用 Quizify，请用
+`tools/build_apkg.py` 把"笔记类型 + 卡片模板 + 运行时资源 + 字体 + 示例卡片"打包成
+一个标准 `.apkg`，再在手机上通过"导入文件"打开：
+
+```powershell
+python -m pip install "anki==25.9.5"
+python tools/build_apkg.py --out dist/quizify_markdown.apkg
+```
+
+模板直接复用 `quizify_addon/notetype.py`，因此不会与加载项漂移；运行时与 KaTeX
+字体等被导出器忽略的资源，会通过“下划线前缀 + 笔记类型 CSS 扫描块”确保全部随包
+分发。包内还附带 18 张逐张演示语法的示例卡。完整说明见
+[`docs/mobile-apkg.md`](docs/mobile-apkg.md)。
+
 ## 离线资源
 
 1.0 的所有复习依赖均包含在 `.ankiaddon` 中，不再使用 CDN，也不需要首启下载。构建脚本仅保留 KaTeX 的 WOFF2 字体，并为每个媒体文件生成大小和 SHA-256；插件同步前会验证清单，损坏文件不会写入媒体库。
@@ -449,6 +465,8 @@ npm run build
 ```powershell
 npm run build:release
 ```
+
+手机端 `.apkg`：`npm run build:apkg` 会在 `dist/` 下生成可导入的牌组包（需要可用的 `anki` Python 库）。
 
 `npm run package` 会先用可读产物执行完整测试，再生成最小化 release bundle、执行 release 行为 smoke test，最后按显式文件白名单创建安装包。ZIP 时间、创建平台和文件权限均固定；相同输入在 Windows 与 Linux 上会得到相同的包成员与元数据。
 

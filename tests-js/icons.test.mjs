@@ -35,6 +35,7 @@ const requiredIcons = [
   "tabs",
   "audio",
   "recite",
+  "occlusion",
   "preview",
   "status-ok",
   "status-warning",
