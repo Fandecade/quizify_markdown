@@ -37,24 +37,43 @@ DECK_DESCRIPTION = (
 )
 
 # --- Sample notes -------------------------------------------------------------
-# (image file, Coordinates, Question, Answer, Note)
-SAMPLES: list[tuple[str, str, str, str, str]] = [
-    (
-        "demo1.png",
-        "8.75,20.8,40,22,1;51.25,20.8,40,22,2;8.75,46.8,40,22,3",
+# The diagram layout (and therefore the mask coordinates) lives in exactly one
+# place: tools/make_demo_images.py. It writes media/manifest.json, which this
+# builder consumes so a regenerated picture can never leave a stale mask behind.
+# name -> (question, answer, note)
+SAMPLE_NOTES: dict[str, tuple[str, str, str]] = {
+    "demo1": (
         "网络协议栈自上而下有哪些层？",
         "应用层（HTTP / DNS）、传输层（TCP / UDP）、网络层（IP / ICMP）。",
         "记忆口诀：应用传网链，逐层封装。",
     ),
-    (
-        "demo2.png",
-        "8.75,20.8,40,22,1;51.25,20.8,40,22,2;8.75,46.8,40,22,3;"
-        "51.25,46.8,40,22,4;8.75,72.8,40,22,5;51.25,72.8,40,22,6",
+    "demo2": (
         "计算机由哪些主要部件组成？",
         "运算器、控制器、存储器、输入设备、输出设备，由总线连接。",
         "运算器 + 控制器 = CPU；存储器分主存与辅存。",
     ),
-]
+}
+
+
+def sample_manifest() -> dict:
+    manifest = MEDIA_DIR / "manifest.json"
+    if not manifest.is_file():
+        raise FileNotFoundError(
+            "media/manifest.json is missing; run tools/make_demo_images.py first"
+        )
+    return json.loads(manifest.read_text(encoding="utf-8"))
+
+
+def samples() -> list[tuple[str, str, str, str, str]]:
+    """Join the generated coordinates with the hand-written prompt text."""
+    manifest = sample_manifest()
+    rows = []
+    for name, (question, answer, note) in SAMPLE_NOTES.items():
+        entry = manifest.get(name)
+        if not entry:
+            raise KeyError(f"media/manifest.json has no entry for {name!r}")
+        rows.append((entry["image"], entry["coordinates"], question, answer, note))
+    return rows
 
 
 def read(name: str) -> str:
@@ -88,7 +107,7 @@ def build_collection(col, with_samples: bool) -> None:
         col.decks.save(deck)
 
     note_type = models.by_name(NOTE_TYPE_NAME)
-    for image, coordinates, question, answer, note in SAMPLES:
+    for image, coordinates, question, answer, note in samples():
         note_obj = col.new_note(note_type)
         note_obj["Question"] = question
         note_obj["Image"] = f'<img src="{image}">'
@@ -200,13 +219,13 @@ def main(argv: list[str] | None = None) -> int:
 
     verify_package(
         output,
-        expected_notes=0 if args.no_samples else len(SAMPLES),
+        expected_notes=0 if args.no_samples else len(samples()),
         assets=assets,
     )
 
     print(f"media embedded: {len(assets)}")
     if not args.no_samples:
-        print(f"sample notes: {len(SAMPLES)}")
+        print(f"sample notes: {len(samples())}")
     print(f"wrote {output} ({output.stat().st_size} bytes)")
     return 0
 

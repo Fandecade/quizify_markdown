@@ -16,9 +16,9 @@ MEDIA = ROOT / "media"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 W, H = 800, 500
-COLUMNS = [70, 410]
-ROWS = [104, 234, 364]
-CELL_W, CELL_H = 320, 110
+MARGIN_X = 70
+CONTENT_TOP = 104
+GAP = 20
 FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif'
 PALETTE = [
     ("#e7f4f1", "#3f9d8f", "#1d6b5f"),
@@ -30,34 +30,52 @@ PALETTE = [
 ]
 
 
-def centre_percent(index: int) -> tuple[float, float]:
-    row, column = divmod(index, 2)
-    return (
-        (COLUMNS[column] + CELL_W / 2) / W * 100,
-        (ROWS[row] + CELL_H / 2) / H * 100,
-    )
+def grid(count: int, columns: int) -> tuple[float, float]:
+    """Return the (cell width, cell height) that fits `count` labels.
+
+    A single column produces full-width bars (good for a protocol stack); two
+    columns split the canvas left/right (good for a parts diagram).
+    """
+    rows = (count + columns - 1) // columns
+    width = (W - 2 * MARGIN_X - (columns - 1) * GAP) / columns
+    height = (H - CONTENT_TOP - 40 - (rows - 1) * GAP) / rows
+    return width, height
 
 
-def box_percent(index: int) -> str:
+def cell_box(index: int, columns: int, count: int) -> dict:
+    row, column = divmod(index, columns)
+    cell_w, cell_h = grid(count, columns)
+    return {
+        "left": MARGIN_X + column * (cell_w + GAP),
+        "top": CONTENT_TOP + row * (cell_h + GAP),
+        "width": cell_w,
+        "height": cell_h,
+    }
+
+
+def box_percent(index: int, columns: int, count: int) -> str:
     """`x,y,w,h` percentages for the nth cell, row-major."""
-    row, column = divmod(index, 2)
-    left = COLUMNS[column] / W * 100
-    top = ROWS[row] / H * 100
+    box = cell_box(index, columns, count)
     return ",".join(
         f"{value:g}"
-        for value in (round(left, 2), round(top, 2),
-                      round(CELL_W / W * 100, 2), round(CELL_H / H * 100, 2))
+        for value in (
+            round(box["left"] / W * 100, 2),
+            round(box["top"] / H * 100, 2),
+            round(box["width"] / W * 100, 2),
+            round(box["height"] / H * 100, 2),
+        )
     )
 
 
-def build_html(title: str, sub: str, labels: list[str]) -> str:
+def build_html(title: str, sub: str, labels: list[str], columns: int) -> str:
     cells = []
     for index, name in enumerate(labels):
-        row, column = divmod(index, 2)
+        box = cell_box(index, columns, len(labels))
         bg, border, ink = PALETTE[index % len(PALETTE)]
         cells.append(
-            f'<div class="cell" style="left:{COLUMNS[column]}px;top:{ROWS[row]}px;'
-            f'width:{CELL_W}px;height:{CELL_H}px;background:{bg};border-color:{border}">'
+            f'<div class="cell" style="left:{box["left"]:.0f}px;top:{box["top"]:.0f}px;'
+            f'width:{box["width"]:.0f}px;height:{box["height"]:.0f}px;'
+            f'background:{bg};border-color:{border}">'
             f'<span style="color:{ink}">{name}</span></div>'
         )
     return (
@@ -73,10 +91,10 @@ def build_html(title: str, sub: str, labels: list[str]) -> str:
     )
 
 
-def render(name: str, title: str, sub: str, labels: list[str]) -> dict:
+def render(name: str, title: str, sub: str, labels: list[str], columns: int) -> dict:
     MEDIA.mkdir(parents=True, exist_ok=True)
     html_path = MEDIA / f"{name}.html"
-    html_path.write_text(build_html(title, sub, labels), encoding="utf-8")
+    html_path.write_text(build_html(title, sub, labels, columns), encoding="utf-8")
     png = MEDIA / f"{name}.png"
     subprocess.run(
         [CHROME, "--headless", "--disable-gpu", "--hide-scrollbars",
@@ -86,21 +104,28 @@ def render(name: str, title: str, sub: str, labels: list[str]) -> dict:
     )
     html_path.unlink()
     coordinates = ";".join(
-        f"{box_percent(i)},{i + 1}" for i in range(len(labels))
+        f"{box_percent(i, columns, len(labels))},{i + 1}" for i in range(len(labels))
     )
     return {"image": png.name, "coordinates": coordinates}
 
 
+# name -> (title, subtitle, labels, columns)
 DEMOS = {
-    "demo1": ("网络协议栈", "点击绿色遮罩，由下往上说出每层名称",
-              ["应用层", "传输层", "网络层"]),
+    "demo1": ("网络协议栈", "点击绿色遮罩，自上而下说出每一层",
+              ["应用层", "传输层", "网络层"], 1),
     "demo2": ("计算机组成", "点击绿色遮罩，逐个说出部件名称",
-              ["运算器", "控制器", "存储器", "输入设备", "输出设备", "总线"]),
+              ["运算器", "控制器", "存储器", "输入设备", "输出设备", "总线"], 2),
 }
 
 
 def main() -> int:
     result = {name: render(name, *payload) for name, payload in DEMOS.items()}
+    # The apkg builder reads this manifest instead of hand-copied numbers, so a
+    # regenerated diagram can never leave a stale mask behind.
+    manifest = MEDIA / "manifest.json"
+    manifest.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
