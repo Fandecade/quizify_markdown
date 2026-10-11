@@ -46,6 +46,34 @@
 **复习**：点单个遮罩揭示/重新遮住；「揭示下一个遮挡」按顺序揭示；
 `W` 揭示下一个、`Q` 收回上一个；`+/-` 或双指捏合缩放，拖动平移。
 
+## 打包成 `.apkg`（手机可直接导入）
+
+```bash
+python -m pip install "anki==25.9.5"     # 需要 Python 3.10+
+python tools/build_apkg.py --out dist/image-occlusion-quizify.apkg
+```
+
+生成 `dist/image-occlusion-quizify.apkg`（约 220 KB），双击即可导入桌面端 /
+AnkiDroid / AnkiMobile。包内含：
+
+- `Image Occlusion (Quizify)` 笔记类型（`Question` / `Image` / `Opinions` /
+  `Answer` / `Note`），模板复用本目录的 `front.html` / `back.html`，
+  样式复用 `style.css`，因此主题与绿色遮罩始终一致；
+- 两张示例图（`demo1.png` 网络协议栈、`demo2.png` 计算机组成）与两张示例卡。
+
+示例图与坐标都由 `tools/make_demo_images.py` 的**同一套布局常量**生成，
+所以遮罩永远和图形对齐；重新生成：
+
+```bash
+python tools/make_demo_images.py
+```
+
+> **为什么用 Rust 导出器**：旧的 `AnkiPackageExporter` 对这个笔记类型会
+> 随机写出空的内层集合（实测约 60% 失败），导入后表现为「导入成功但没有卡片」。
+> 构建脚本改用确定性的 Rust 导出器（`legacy=True` 保留经典
+> `collection.anki21` 结构以兼容手机端），并在结束后**真实导入一次做校验**，
+> 条数不符就直接报错，绝不会给你一个坏包。
+
 ## 开发
 
 ```bash
