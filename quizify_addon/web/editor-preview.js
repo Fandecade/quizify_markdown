@@ -32458,9 +32458,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       }
       if (text3[index] !== "]" || !brackets.length) continue;
       const labelOpen = brackets.pop();
-      if (text3.slice(Math.max(0, labelOpen - 6), labelOpen) === "!audio") {
-        continue;
-      }
       const image = labelOpen > 0 && text3[labelOpen - 1] === "!" && !escapedAt(text3, labelOpen - 1);
       const ownerStart = image ? labelOpen - 1 : labelOpen;
       let end = markdownLinkDestinationEnd(text3, index + 1, scanIndex);
@@ -32492,28 +32489,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     return contexts.sort(
       (left, right) => left.start - right.start || right.end - left.end
     );
-  }
-  function findQuizifyAudioRanges(source) {
-    const text3 = String(source != null ? source : "");
-    const ranges = [];
-    let lineStart = 0;
-    while (lineStart <= text3.length) {
-      let lineEnd = text3.indexOf("\n", lineStart);
-      if (lineEnd < 0) lineEnd = text3.length;
-      if (lineEnd > lineStart && text3[lineEnd - 1] === "\r") lineEnd--;
-      let start = text3.indexOf("!audio[", lineStart);
-      while (start >= 0 && start < lineEnd) {
-        const labelEnd = text3.indexOf("](", start + 7);
-        if (labelEnd < 0 || labelEnd >= lineEnd) break;
-        const end = text3.indexOf(")", labelEnd + 2);
-        if (end < 0 || end >= lineEnd) break;
-        ranges.push({ start, end: end + 1 });
-        start = text3.indexOf("!audio[", end + 1);
-      }
-      if (lineEnd === text3.length) break;
-      lineStart = lineEnd + (text3[lineEnd] === "\r" ? 2 : 1);
-    }
-    return ranges;
   }
   function resolveInlineOwnership(source, extraOpaqueRanges = [], referenceLabels = /* @__PURE__ */ new Set(), includeLinks = true) {
     var _a2, _b, _c;
@@ -32640,10 +32615,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     const htmlIndex = buildHtmlTagEndIndex(text3);
     const ownership = resolveInlineOwnership(
       text3,
-      [
-        ...findHtmlOpaqueRanges(text3, htmlIndex),
-        ...findQuizifyAudioRanges(text3)
-      ],
+      [...findHtmlOpaqueRanges(text3, htmlIndex)],
       referenceLabels
     );
     let protectedSource = "";
@@ -32912,91 +32884,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     return rendered;
   }
 
-  // src/shared/occlusion.js
-  function clamp(value, min, max) {
-    return Math.min(max, Math.max(min, value));
-  }
-  function toFiniteNumber(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
-  }
-  function clampOcclusionPercent(value) {
-    const number = toFiniteNumber(value);
-    if (number === null) return null;
-    return clamp(number, 0, 100);
-  }
-  function formatOcclusionNumber(value) {
-    const number = toFiniteNumber(value);
-    if (number === null) return "0";
-    const rounded = Math.round(number * 100) / 100;
-    return String(rounded);
-  }
-  function parseOcclusionOptions(source) {
-    var _a2, _b, _c;
-    const options = { image: "", alt: "" };
-    const text3 = String(source != null ? source : "");
-    const pattern = /([A-Za-z][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
-    let match;
-    while ((match = pattern.exec(text3)) !== null) {
-      const key = match[1].toLowerCase();
-      const value = (_c = (_b = (_a2 = match[2]) != null ? _a2 : match[3]) != null ? _b : match[4]) != null ? _c : "";
-      if (key === "url" || key === "image" || key === "src") {
-        options.image = options.image || value.trim();
-      } else if (key === "alt" || key === "title") {
-        options.alt = options.alt || value.trim();
-      }
-    }
-    return options;
-  }
-  function parseOcclusionRegion(line) {
-    const match = /^\s*(\d{1,4})\s*[.)]?\s+(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*(?:[ \t]+(.+?))?\s*$/.exec(
-      String(line != null ? line : "")
-    );
-    if (!match) return null;
-    const order = Number(match[1]);
-    const x2 = clampOcclusionPercent(match[2]);
-    const y2 = clampOcclusionPercent(match[3]);
-    const width = clampOcclusionPercent(match[4]);
-    const height = clampOcclusionPercent(match[5]);
-    if (![x2, y2, width, height].every((value) => value !== null)) return null;
-    if (width <= 0 || height <= 0) return null;
-    return {
-      order: Number.isFinite(order) ? order : 0,
-      x: x2,
-      y: y2,
-      width,
-      height,
-      label: (match[6] || "").trim()
-    };
-  }
-  function sortOcclusionRegions(regions) {
-    return regions.map((region, index) => ({ region, index })).sort(
-      (a, b2) => (a.region.order || 0) - (b2.region.order || 0) || a.index - b2.index
-    ).map((entry) => entry.region);
-  }
-  function extractMarkdownImage(text3) {
-    var _a2, _b, _c, _d, _e2;
-    const source = String(text3 != null ? text3 : "");
-    const markdown = /!\[([^\]]*)\]\(\s*([^)]*?)\s*\)/.exec(source);
-    if (markdown) {
-      const url = markdown[2].replace(/\s+"[^"]*"\s*$/, "").replace(/\s+'[^']*'\s*$/, "").trim();
-      return { url, alt: markdown[1].trim() };
-    }
-    const html2 = /<img\b[^>]*?\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(
-      source
-    );
-    if (html2) {
-      const url = ((_c = (_b = (_a2 = html2[1]) != null ? _a2 : html2[2]) != null ? _b : html2[3]) != null ? _c : "").trim();
-      const alt = /\balt\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(source);
-      return { url, alt: ((_e2 = (_d = alt == null ? void 0 : alt[1]) != null ? _d : alt == null ? void 0 : alt[2]) != null ? _e2 : "").trim() };
-    }
-    return { url: "", alt: "" };
-  }
-  function stripFirstImage(text3) {
-    const source = String(text3 != null ? text3 : "");
-    return source.replace(/!\[[^\]]*\]\([^)]*\)/, "").replace(/<img\b[^>]*>/i, "");
-  }
-
   // src/review/markdown/parsers.js
   function createParserTools(state) {
     function readLine(src, offset) {
@@ -33159,341 +33046,20 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     function flattenChoiceTokens(options) {
       return options.flatMap((option) => option.tokens || []);
     }
-    function parseReciteOptions(source) {
-      const options = { mask: 40, mode: "mixed" };
-      String(source || "").trim().split(/\s+/).filter(Boolean).forEach((part) => {
-        const match = /^([A-Za-z][\w-]*)=(\S+)$/.exec(part);
-        if (!match) return;
-        const key = match[1].toLowerCase();
-        const value = match[2].toLowerCase();
-        if (key === "mask" && /^\d{1,3}$/.test(value)) {
-          options.mask = Math.max(0, Math.min(100, Number(value)));
-        } else if (key === "mode" && ["auto", "manual", "mixed"].includes(value)) {
-          options.mode = value;
-        }
-      });
-      return options;
-    }
-    function parseReciteBlock(src, lexer) {
-      const opener = /^::::[ \t]+recite(?:[ \t]+([^\r\n]*?))?[ \t]*(?:\n|$)/i.exec(src);
-      if (!opener) return null;
-      let depth = 1;
-      let offset = opener[0].length;
-      let fence = null;
-      let mathEnd = -1;
-      const lines = [];
-      while (depth > 0 && offset < src.length) {
-        const insideMath = !fence && (offset < mathEnd || (mathEnd = validMathBlockEnd(src, offset)) > offset);
-        const entry = readLine(src, offset);
-        offset = entry.next;
-        if (insideMath) {
-          lines.push(entry.line);
-        } else if (fence) {
-          lines.push(entry.line);
-          fence = nextFence(entry.line, fence);
-        } else if (fenceMarker(entry.line)) {
-          lines.push(entry.line);
-          fence = nextFence(entry.line, fence);
-        } else if (/^::::[ \t]+recite(?:[ \t]|$)/i.test(entry.line)) {
-          depth++;
-          lines.push(entry.line);
-        } else if (/^::::\s*$/.test(entry.line)) {
-          depth--;
-          if (depth > 0) lines.push(entry.line);
-        } else {
-          lines.push(entry.line);
-        }
-      }
-      if (depth !== 0) return null;
-      const options = parseReciteOptions(opener[1]);
-      return {
-        raw: src.slice(0, offset),
-        mask: options.mask,
-        mode: options.mode,
-        tokens: lexer.blockTokens(trimBlankEdges(lines).join("\n"))
-      };
-    }
-    function parseOcclusionBlock(src, lexer) {
-      const opener = /^::::[ \t]+occlusion(?:[ \t]+([^\r\n]*?))?[ \t]*(?:\n|$)/i.exec(src);
-      if (!opener) return null;
-      let depth = 1;
-      let offset = opener[0].length;
-      let fence = null;
-      let mathEnd = -1;
-      const lines = [];
-      while (depth > 0 && offset < src.length) {
-        const insideMath = !fence && (offset < mathEnd || (mathEnd = validMathBlockEnd(src, offset)) > offset);
-        const entry = readLine(src, offset);
-        offset = entry.next;
-        if (insideMath) {
-          lines.push(entry.line);
-        } else if (fence) {
-          lines.push(entry.line);
-          fence = nextFence(entry.line, fence);
-        } else if (fenceMarker(entry.line)) {
-          lines.push(entry.line);
-          fence = nextFence(entry.line, fence);
-        } else if (/^::::[ \t]+occlusion(?:[ \t]|$)/i.test(entry.line)) {
-          depth++;
-          lines.push(entry.line);
-        } else if (/^::::\s*$/.test(entry.line)) {
-          depth--;
-          if (depth > 0) lines.push(entry.line);
-        } else {
-          lines.push(entry.line);
-        }
-      }
-      if (depth !== 0) return null;
-      const regions = [];
-      const contentLines = [];
-      lines.forEach((line) => {
-        const region = parseOcclusionRegion(line);
-        if (region) regions.push(region);
-        else contentLines.push(line);
-      });
-      const options = parseOcclusionOptions(opener[1]);
-      const contentBody = trimBlankEdges(contentLines).join("\n");
-      const embeddedImage = extractMarkdownImage(contentBody);
-      const url = options.image || embeddedImage.url;
-      const alt = options.alt || embeddedImage.alt;
-      const captionSource = url && embeddedImage.url === url ? stripFirstImage(contentBody) : contentBody;
-      return {
-        raw: src.slice(0, offset),
-        url,
-        alt,
-        regions,
-        tokens: lexer.blockTokens(trimBlankEdges(captionSource.split("\n")).join("\n"))
-      };
-    }
-    const reciteStopWordsEn = /* @__PURE__ */ new Set([
-      "a",
-      "an",
-      "the",
-      "and",
-      "but",
-      "or",
-      "nor",
-      "for",
-      "so",
-      "yet",
-      "at",
-      "by",
-      "in",
-      "of",
-      "on",
-      "to",
-      "up",
-      "with",
-      "as",
-      "is",
-      "are",
-      "was",
-      "were",
-      "be",
-      "been",
-      "being",
-      "have",
-      "has",
-      "had",
-      "do",
-      "does",
-      "did",
-      "that",
-      "this",
-      "these",
-      "those",
-      "it",
-      "he",
-      "she",
-      "they",
-      "we",
-      "i",
-      "you",
-      "my",
-      "your",
-      "his",
-      "her",
-      "its",
-      "our",
-      "their"
-    ]);
-    const reciteStopWordsCn = new Set(
-      "\u7684\u4E86\u548C\u662F\u5C31\u90FD\u800C\u53CA\u4E0E\u7740\u6216\u4E4B\u5728\u628A\u88AB\u7ED9\u8BA9\u5411\u4ECE\u4E8E\u5730\u5F97\u5417\u5462\u5427\u554A\u5440".split("")
-    );
-    const reciteStopWordsRu = /* @__PURE__ */ new Set([
-      "\u0430",
-      "\u0431\u0435\u0437",
-      "\u0431\u044B",
-      "\u0431\u044B\u043B",
-      "\u0431\u044B\u043B\u0430",
-      "\u0431\u044B\u043B\u0438",
-      "\u0431\u044B\u043B\u043E",
-      "\u0431\u044B\u0442\u044C",
-      "\u0432",
-      "\u0432\u0430\u043C",
-      "\u0432\u0430\u0441",
-      "\u0432\u0430\u0448",
-      "\u0432\u0430\u0448\u0430",
-      "\u0432\u0430\u0448\u0435",
-      "\u0432\u0430\u0448\u0438",
-      "\u0432\u043E",
-      "\u0432\u044B",
-      "\u0434\u043B\u044F",
-      "\u0434\u043E",
-      "\u0435\u0433\u043E",
-      "\u0435\u0435",
-      "\u0435\u0451",
-      "\u0435\u0439",
-      "\u0435\u043C\u0443",
-      "\u0435\u0441\u043B\u0438",
-      "\u0435\u0441\u0442\u044C",
-      "\u0436\u0435",
-      "\u0437\u0430",
-      "\u0438",
-      "\u0438\u0437",
-      "\u0438\u043B\u0438",
-      "\u0438\u043C",
-      "\u0438\u0445",
-      "\u043A",
-      "\u043A\u0430\u043A",
-      "\u043A\u043E",
-      "\u043B\u0438",
-      "\u043C\u0435\u043D\u044F",
-      "\u043C\u043D\u0435",
-      "\u043C\u043E\u0439",
-      "\u043C\u043E\u044F",
-      "\u043C\u043E\u0435",
-      "\u043C\u043E\u0451",
-      "\u043C\u043E\u0438",
-      "\u043C\u044B",
-      "\u043D\u0430",
-      "\u043D\u0435",
-      "\u043D\u0435\u0433\u043E",
-      "\u043D\u0435\u0435",
-      "\u043D\u0435\u0451",
-      "\u043D\u0435\u0439",
-      "\u043D\u0435\u043C",
-      "\u043D\u0451\u043C",
-      "\u043D\u0435\u0442",
-      "\u043D\u0438",
-      "\u043D\u043E",
-      "\u043E",
-      "\u043E\u0431",
-      "\u043E\u043D",
-      "\u043E\u043D\u0430",
-      "\u043E\u043D\u0438",
-      "\u043E\u043D\u043E",
-      "\u043E\u0442",
-      "\u043F\u043E",
-      "\u043F\u043E\u0434",
-      "\u043F\u0440\u0438",
-      "\u0441",
-      "\u0441\u0435\u0431\u044F",
-      "\u0441\u043E",
-      "\u0442\u0430",
-      "\u0442\u0435",
-      "\u0442\u043E",
-      "\u0442\u043E\u0442",
-      "\u0442\u044B",
-      "\u0443",
-      "\u0447\u0442\u043E",
-      "\u044D\u0442\u0430",
-      "\u044D\u0442\u0438",
-      "\u044D\u0442\u043E",
-      "\u044D\u0442\u043E\u0442",
-      "\u044F"
-    ]);
-    function tokenizeAutomaticReciteText(text3) {
-      const source = String(text3 || "");
-      const pattern = /(?:[$¥€£₽₹₩])?\p{N}+(?:[.,\u066b\u066c]\p{N}+)*(?:%|kg|km|cm|mm|g|lb|oz|k|m|bn)?|\p{Script=Han}|[\p{L}\p{M}]+(?:['’/\-\u2010\u2011][\p{L}\p{M}]+)*/gu;
-      const tokens = [];
-      let offset = 0;
-      let match;
-      while ((match = pattern.exec(source)) !== null) {
-        if (match.index > offset) {
-          tokens.push({ text: source.slice(offset, match.index), hideable: false, manual: false });
-        }
-        const value = match[0];
-        const isEnglish = /^[A-Za-z]/.test(value);
-        const isChinese = /^\p{Script=Han}$/u.test(value);
-        const isCyrillic = /^\p{Script=Cyrillic}/u.test(value);
-        const hideable = isEnglish ? !reciteStopWordsEn.has(value.toLowerCase()) : isChinese ? !reciteStopWordsCn.has(value) : isCyrillic ? !reciteStopWordsRu.has(value.toLowerCase()) : true;
-        tokens.push({ text: value, hideable, manual: false });
-        offset = pattern.lastIndex;
-      }
-      if (offset < source.length) {
-        tokens.push({ text: source.slice(offset), hideable: false, manual: false });
-      }
-      return tokens;
-    }
-    function tokenizeReciteText(text3, mode = "mixed") {
-      const normalizedMode = ["auto", "manual", "mixed"].includes(mode) ? mode : "mixed";
-      const source = String(text3 || "");
-      const tokens = [];
-      const groups = /%%([^%\n](?:[^\n]*?[^%\n])?)%%/g;
-      let offset = 0;
-      let match;
-      function appendPlain(value) {
-        if (!value) return;
-        if (normalizedMode === "manual") {
-          tokens.push({ text: value, hideable: false, manual: false });
-        } else {
-          tokens.push(...tokenizeAutomaticReciteText(value));
-        }
-      }
-      while ((match = groups.exec(source)) !== null) {
-        appendPlain(source.slice(offset, match.index));
-        const value = match[1];
-        if (normalizedMode === "auto") {
-          tokens.push(...tokenizeAutomaticReciteText(value));
-        } else {
-          tokens.push({ text: value, hideable: Boolean(value.trim()), manual: true });
-        }
-        offset = groups.lastIndex;
-      }
-      appendPlain(source.slice(offset));
-      return tokens;
-    }
-    function canReciteScrub(pointerType = "mouse", button = 0) {
-      return Number(button) === 0 && String(pointerType || "mouse").toLowerCase() !== "touch";
-    }
-    function canArmReciteTouchScrub(pointerType = "") {
-      return String(pointerType).toLowerCase() === "touch";
-    }
-    function isReciteScrubMove(dx, dy, threshold = 6) {
-      return Math.hypot(Number(dx) || 0, Number(dy) || 0) >= threshold;
-    }
     return Object.freeze({
-      canArmReciteTouchScrub,
-      canReciteScrub,
       flattenChoiceTokens,
       flattenTabTokens,
       inlineTokens,
-      isReciteScrubMove,
       markerStart,
       nextName,
       parseChoiceBlock,
       parseChoiceOptions,
-      parseOcclusionBlock,
-      parseReciteBlock,
-      parseReciteOptions,
       parseTabsBlock,
       readLine,
       regexStart,
-      trimBlankEdges,
-      tokenizeReciteText
+      trimBlankEdges
     });
   }
-
-  // node_modules/lucide/dist/esm/icons/audio-lines.mjs
-  var AudioLines = [
-    ["path", { d: "M2 10v3" }],
-    ["path", { d: "M6 6v11" }],
-    ["path", { d: "M10 3v18" }],
-    ["path", { d: "M14 8v7" }],
-    ["path", { d: "M18 5v13" }],
-    ["path", { d: "M22 10v3" }]
-  ];
 
   // node_modules/lucide/dist/esm/icons/badge-alert.mjs
   var BadgeAlert = [
@@ -33510,18 +33076,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   // node_modules/lucide/dist/esm/icons/bold.mjs
   var Bold = [
     ["path", { d: "M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" }]
-  ];
-
-  // node_modules/lucide/dist/esm/icons/book-open-check.mjs
-  var BookOpenCheck = [
-    ["path", { d: "M12 5v16" }],
-    ["path", { d: "m16 12 2 2 4-4" }],
-    [
-      "path",
-      {
-        d: "M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344"
-      }
-    ]
   ];
 
   // node_modules/lucide/dist/esm/icons/braces.mjs
@@ -33972,9 +33526,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     annotation: MessageSquareText,
     collapse: ListCollapse,
     tabs: PanelsTopLeft,
-    audio: AudioLines,
-    recite: BookOpenCheck,
-    occlusion: SquareDashed,
+    mask: SquareDashed,
     preview: ScanEye,
     "status-ok": CircleCheck,
     "status-warning": CircleAlert,
@@ -34275,7 +33827,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       });
     }
     function literalizeInteractiveLinkTokens(tokens = []) {
-      const interactive = /* @__PURE__ */ new Set(["fitb", "reveal", "annotation"]);
+      const interactive = /* @__PURE__ */ new Set(["fitb", "reveal", "annotation", "mask"]);
       return tokens.map((token) => {
         var _a2, _b;
         if (interactive.has(token.type)) {
@@ -34401,24 +33953,17 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       };
     }
     const {
-      canArmReciteTouchScrub,
-      canReciteScrub,
       flattenChoiceTokens,
       flattenTabTokens,
       inlineTokens,
-      isReciteScrubMove,
       markerStart,
       nextName,
       parseChoiceBlock,
       parseChoiceOptions,
-      parseOcclusionBlock,
-      parseReciteBlock,
-      parseReciteOptions,
       parseTabsBlock,
       readLine,
       regexStart,
-      trimBlankEdges,
-      tokenizeReciteText
+      trimBlankEdges
     } = createParserTools(state);
     function createQuizifyExtensions() {
       function inlineExtensionStart(src) {
@@ -34428,16 +33973,30 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           if (character === "\\" || character === "<" || character === "!" || character === "[" || character === "`" || character === "*" || character === "~" || character === "_") {
             return;
           }
-          if (character === "$" || character === "^" || character === "{" && text3[index + 1] === "{" || character === "=" && text3[index + 1] === "=") {
+          if (character === "$" || character === "^" || character === "%" && text3[index + 1] === "%" || character === "{" && text3[index + 1] === "{" || character === "=" && text3[index + 1] === "=") {
             return index;
           }
         }
       }
-      const audioIcons = {
-        replay: iconSvg("rotate-ccw", { className: "audio-icon" }),
-        play: iconSvg("play", { className: "audio-icon audio-icon-play" }),
-        pause: iconSvg("pause", { className: "audio-icon audio-icon-pause" }),
-        cancel: iconSvg("x", { className: "audio-icon" })
+      const textMask = {
+        name: "textMask",
+        level: "inline",
+        childTokens: ["tokens"],
+        tokenizer(src) {
+          const match = /^%%([^%\n]+)%%/.exec(src);
+          if (!match) return;
+          const text3 = match[1].trim();
+          if (!text3) return;
+          return {
+            type: "textMask",
+            raw: match[0],
+            tokens: inlineTokens(this.lexer, text3)
+          };
+        },
+        renderer(token) {
+          const label = escapeAttr(t("review.mask.reveal"));
+          return `<span class="quizify-mask" role="button" tabindex="0" aria-expanded="false" aria-label="${label}" title="${label}"><span class="quizify-mask-text">${this.parser.parseInline(token.tokens)}</span></span>`;
+        }
       };
       const githubAlert = {
         name: "githubAlert",
@@ -34489,70 +34048,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
             caution: "caution"
           }[token.kind];
           return `<aside class="markdown-alert markdown-alert-${token.kind}"><p class="markdown-alert-title">${iconSvg(alertIcon, { className: "markdown-alert-icon" })}${escapeHtml(token.label)}</p>${this.parser.parse(token.tokens)}</aside>`;
-        }
-      };
-      const imageOcclusion = {
-        name: "imageOcclusion",
-        level: "block",
-        childTokens: ["tokens"],
-        start(src) {
-          return regexStart(src, /^::::[ \t]+occlusion(?:[ \t]|$)/im);
-        },
-        tokenizer(src) {
-          const parsed = parseOcclusionBlock(src, this.lexer);
-          if (!parsed) return;
-          return { type: "imageOcclusion", ...parsed };
-        },
-        renderer(token) {
-          var _a2;
-          const caption = ((_a2 = token.tokens) == null ? void 0 : _a2.length) ? `<figcaption class="quizify-occlusion-caption">${this.parser.parse(token.tokens)}</figcaption>` : "";
-          const regions = sortOcclusionRegions(token.regions || []);
-          const shapes = regions.map((region, index) => {
-            const label = (region.label || "").trim();
-            const mark = label ? `<text class="quizify-occlusion-label" x="${formatOcclusionNumber(
-              region.x + region.width / 2
-            )}" y="${formatOcclusionNumber(
-              region.y + region.height / 2
-            )}" text-anchor="middle" dominant-baseline="central">${escapeHtml(
-              label
-            )}</text>` : "";
-            return `<g class="quizify-occlusion-region" role="button" tabindex="0" data-order="${escapeAttr(
-              region.order
-            )}" aria-label="${escapeAttr(
-              t("review.occlusion.region", {
-                order: index + 1,
-                label: label || region.order
-              })
-            )}"><rect class="quizify-occlusion-box" x="${formatOcclusionNumber(
-              region.x
-            )}" y="${formatOcclusionNumber(region.y)}" width="${formatOcclusionNumber(
-              region.width
-            )}" height="${formatOcclusionNumber(region.height)}" rx="0.6" ry="0.6"></rect><g class="quizify-occlusion-content">${mark}</g></g>`;
-          }).join("");
-          const image = token.url ? `<img class="quizify-occlusion-image" src="${escapeAttr(
-            token.url
-          )}" alt="${escapeAttr(token.alt || "")}" draggable="false">` : "";
-          const overlay = token.url ? `<svg class="quizify-occlusion-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="false">${shapes}</svg>` : "";
-          if (!token.url) {
-            return '<p class="quizify-occlusion-missing">' + escapeHtml(t("review.occlusion.missing_image")) + "</p>";
-          }
-          return `<figure class="quizify-occlusion" data-count="${regions.length}"><div class="quizify-occlusion-frame">${image}${overlay}</div>` + caption + "</figure>";
-        }
-      };
-      const recite = {
-        name: "recite",
-        level: "block",
-        childTokens: ["tokens"],
-        start(src) {
-          return regexStart(src, /^::::[ \t]+recite(?:[ \t]|$)/im);
-        },
-        tokenizer(src) {
-          const parsed = parseReciteBlock(src, this.lexer);
-          if (!parsed) return;
-          return { type: "recite", ...parsed };
-        },
-        renderer(token) {
-          return `<section class="quizify-recite" data-mask="${token.mask}" data-mode="${escapeAttr(token.mode)}" data-scrub-label="${escapeAttr(t("review.recite.scrub_hint"))}"><div class="quizify-recite-content">${this.parser.parse(token.tokens)}</div><footer class="quizify-recite-toolbar"><label class="quizify-recite-slider"><span>${escapeHtml(t("review.recite.mask"))}</span><input type="range" min="0" max="100" step="5" value="${token.mask}" aria-label="${escapeAttr(t("review.recite.mask_ratio"))}"><output>${token.mask}%</output></label><button type="button" class="quizify-recite-shuffle" data-quizify-control="recite-shuffle" aria-label="${escapeAttr(t("review.recite.shuffle_label"))}">${iconSvg("shuffle", { className: "quizify-recite-shuffle-icon" })}<span>${escapeHtml(t("review.recite.shuffle"))}</span></button></footer></section>`;
         }
       };
       const collapse = {
@@ -34814,26 +34309,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           return `<div class="choice" data-correct="${escapeAttr(token.correct)}" data-quizify-kind="${token.isSingle ? "single" : "multiple"}"><div class="options">${optionsHtml}</div><button type="button" class="feedback" data-quizify-control="choice-feedback" data-correct="${escapeAttr(token.correct)}" data-is-answered="false">${escapeHtml(t("review.choice.show_answer", { type: typeLabel }))}</button></div>`;
         }
       };
-      const audio = {
-        name: "audio",
-        level: "block",
-        start(src) {
-          return markerStart(src, "!audio[");
-        },
-        tokenizer(src) {
-          const match = /^!audio\[(.*?)\]\((.*?)\)/.exec(src);
-          if (!match) return;
-          return {
-            type: "audio",
-            raw: match[0],
-            title: match[1].trim(),
-            url: match[2].trim()
-          };
-        },
-        renderer(token) {
-          return `<div class="audio-player" data-title="${escapeAttr(token.title)}" data-kind-label="${escapeAttr(t("review.audio.kind"))}"><audio preload="metadata"><source src="${escapeAttr(token.url)}" type="audio/mpeg"></audio><div class="time-display"><span class="current-time">0:00</span><span class="duration">0:00</span></div><div class="progress-container" role="slider" tabindex="0" aria-label="${escapeAttr(t("review.audio.progress"))}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-bar"></div></div><div class="player-controls"><button type="button" class="replay-btn" data-quizify-control="audio-replay" title="${escapeAttr(t("review.audio.replay"))}" aria-label="${escapeAttr(t("review.audio.replay"))}">${audioIcons.replay}</button><button type="button" class="play-btn" data-quizify-control="audio-toggle" title="${escapeAttr(t("review.audio.play"))}" aria-label="${escapeAttr(t("review.audio.play"))}">${audioIcons.play}${audioIcons.pause}</button><button type="button" class="setA-btn" data-quizify-control="audio-loop-start" title="${escapeAttr(t("review.audio.set_a"))}" aria-label="${escapeAttr(t("review.audio.set_a"))}" aria-pressed="false"><span class="audio-letter">A</span></button><button type="button" class="setB-btn" data-quizify-control="audio-loop-end" title="${escapeAttr(t("review.audio.set_b"))}" aria-label="${escapeAttr(t("review.audio.set_b"))}" aria-pressed="false"><span class="audio-letter">B</span></button><button type="button" class="cancelLoop-btn" data-quizify-control="audio-loop-cancel" title="${escapeAttr(t("review.audio.cancel_loop"))}" aria-label="${escapeAttr(t("review.audio.cancel_loop"))}">${audioIcons.cancel}</button><select class="speed-select" aria-label="${escapeAttr(t("review.audio.speed"))}"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></div></div>`;
-        }
-      };
       const mathSequences = Array.from(
         new Set(
           KATEX_DELIMITERS.flatMap((delimiter) => [delimiter.left, delimiter.right])
@@ -34988,18 +34463,16 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       };
       return [
         githubAlert,
-        imageOcclusion,
-        recite,
         collapse,
         tabs,
         annotation,
         highlight,
         fitb,
+        textMask,
         reveal,
         superscript,
         subscript,
         mcq,
-        audio,
         mathInline,
         mathBlock,
         rawIgnoredElement,
@@ -35008,20 +34481,13 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       ];
     }
     return Object.freeze({
-      canArmReciteTouchScrub,
-      canReciteScrub,
       createQuizifyExtensions,
       createQuizifyRenderer,
       escapeHtml,
-      isReciteScrubMove,
       markerStart,
       parseChoiceBlock,
       parseChoiceOptions,
-      parseOcclusionBlock,
-      parseReciteBlock,
-      parseReciteOptions,
-      parseTabsBlock,
-      tokenizeReciteText
+      parseTabsBlock
     });
   }
 
@@ -35029,7 +34495,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   var KEYS = Object.freeze({
     answers: "quizify:v1:answers",
     reveal: "quizify:v1:reveal-progress",
-    recite: "quizify:v1:recite-state",
     floatingPosition: "quizify:v1:floating-position"
   });
   function createReviewStorage(target = globalThis) {
@@ -35065,19 +34530,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       var _a2;
       (_a2 = persistence()) == null ? void 0 : _a2.removeItem(KEYS.reveal);
     }
-    function loadReciteState() {
-      var _a2;
-      const saved = (_a2 = persistence()) == null ? void 0 : _a2.getItem(KEYS.recite);
-      return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
-    }
-    function saveReciteState(value) {
-      var _a2;
-      (_a2 = persistence()) == null ? void 0 : _a2.setItem(KEYS.recite, value);
-    }
-    function clearReciteState() {
-      var _a2;
-      (_a2 = persistence()) == null ? void 0 : _a2.removeItem(KEYS.recite);
-    }
     function loadFloatingPosition() {
       var _a2;
       try {
@@ -35097,15 +34549,12 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       }
     }
     return Object.freeze({
-      clearReciteState,
       clearRevealProgress,
       clearUserAnswers,
       loadFloatingPosition,
-      loadReciteState,
       loadRevealProgress,
       loadUserAnswers,
       saveFloatingPosition,
-      saveReciteState,
       saveRevealProgress,
       saveUserAnswers
     });
@@ -35167,7 +34616,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     );
     return { left, top, right: left + width, bottom: top + height, width, height };
   }
-  function clamp2(value, minimum, maximum) {
+  function clamp(value, minimum, maximum) {
     return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
   }
   function computeTooltipPlacement(anchorRect, tooltipRect, boundaryRect, { margin = TOOLTIP_MARGIN, gap = TOOLTIP_GAP } = {}) {
@@ -35181,15 +34630,15 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     const width = Math.min(tooltip.width, Math.max(0, innerRight - innerLeft));
     const height = Math.min(tooltip.height, Math.max(0, innerBottom - innerTop));
     const anchorCenter = anchor.left + anchor.width / 2;
-    const left = clamp2(anchorCenter - width / 2, innerLeft, innerRight - width);
+    const left = clamp(anchorCenter - width / 2, innerLeft, innerRight - width);
     const spaceAbove = Math.max(0, anchor.top - gap - innerTop);
     const spaceBelow = Math.max(0, innerBottom - anchor.bottom - gap);
     const placement = spaceAbove >= height || spaceAbove >= spaceBelow && spaceBelow < height ? "top" : "bottom";
     const availableHeight = placement === "top" ? spaceAbove : spaceBelow;
     const visibleHeight = Math.min(height, availableHeight);
-    const top = placement === "top" ? clamp2(anchor.top - gap - visibleHeight, innerTop, innerBottom - visibleHeight) : clamp2(anchor.bottom + gap, innerTop, innerBottom - visibleHeight);
+    const top = placement === "top" ? clamp(anchor.top - gap - visibleHeight, innerTop, innerBottom - visibleHeight) : clamp(anchor.bottom + gap, innerTop, innerBottom - visibleHeight);
     const arrowEdge = Math.min(TOOLTIP_ARROW_EDGE, width / 2);
-    const arrowLeft = clamp2(anchorCenter - left, arrowEdge, width - arrowEdge);
+    const arrowLeft = clamp(anchorCenter - left, arrowEdge, width - arrowEdge);
     return {
       left,
       top,
@@ -35436,410 +34885,32 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     });
   }
 
-  // src/review/runtime/recite.js
-  var MAX_RECITE_TOKENS = 2e3;
-  function initRecite({
-    root,
-    loadReciteState,
-    saveReciteState,
-    tokenizeReciteText,
-    canReciteScrub,
-    canArmReciteTouchScrub,
-    isReciteScrubMove,
-    registerRevealController,
-    lifecycle = null
-  }) {
-    if (!root.document) return;
-    const activeLifecycle = resolveRuntimeLifecycle(root, lifecycle);
-    const savedState = loadReciteState();
-    const excluded = [
-      "a",
-      "img",
-      "svg",
-      "math",
-      "code",
-      "pre",
-      "script",
-      "style",
-      "textarea",
-      "input",
-      "button",
-      "select",
-      "option",
-      ".fitb",
-      ".choice",
-      ".reveal",
-      ".annotation",
-      ".audio-player",
-      ".quizify-math",
-      ".katex",
-      ".quizify-recite-toolbar"
-    ].join(",");
-    root.document.querySelectorAll(".quizify-recite").forEach((block, blockIndex) => {
-      var _a2;
-      if (block.dataset.quizifyInitialized === "true") return;
-      const content = block.querySelector(".quizify-recite-content");
-      const slider = block.querySelector('.quizify-recite-toolbar input[type="range"]');
-      const output = block.querySelector(".quizify-recite-toolbar output");
-      const shuffle = block.querySelector(".quizify-recite-shuffle");
-      if (!content || !slider || !output || !shuffle) return;
-      block.dataset.quizifyInitialized = "true";
-      if (!block.dataset.scrubLabel) {
-        block.dataset.scrubLabel = t("review.recite.scrub_hint");
-      }
-      const mode = ["auto", "manual", "mixed"].includes(block.dataset.mode) ? block.dataset.mode : "mixed";
-      const field = (_a2 = block.closest) == null ? void 0 : _a2.call(block, ".quizify-field");
-      const blockId = `${(field == null ? void 0 : field.id) || "field"}-recite-${blockIndex}`;
-      const textNodes = [];
-      function collectTextNodes(node) {
-        Array.from((node == null ? void 0 : node.childNodes) || []).forEach((child) => {
-          var _a3, _b;
-          if (child.nodeType === 3) {
-            textNodes.push(child);
-            return;
-          }
-          if (child.nodeType !== 1) return;
-          if (child !== content && ((_a3 = child.matches) == null ? void 0 : _a3.call(child, excluded))) return;
-          if (((_b = child.classList) == null ? void 0 : _b.contains("quizify-recite")) && child !== block) return;
-          collectTextNodes(child);
-        });
-      }
-      let tokenIndex = 0;
-      const ownsToken = (token) => {
-        var _a3;
-        return ((_a3 = token.closest) == null ? void 0 : _a3.call(token, ".quizify-recite")) === block;
-      };
-      let existingTokens = Array.from(
-        block.querySelectorAll(".quizify-recite-token")
-      ).filter(ownsToken);
-      if (existingTokens.length > MAX_RECITE_TOKENS) {
-        existingTokens.slice(MAX_RECITE_TOKENS).forEach((token) => {
-          token.replaceWith(root.document.createTextNode(token.textContent || ""));
-        });
-        existingTokens = existingTokens.slice(0, MAX_RECITE_TOKENS);
-        block.dataset.quizifyTokenCapped = "true";
-      }
-      if (!existingTokens.length) {
-        delete block.dataset.quizifyTokenCapped;
-        collectTextNodes(content);
-        textNodes.forEach((node) => {
-          var _a3;
-          const parts = tokenizeReciteText(node.nodeValue, mode);
-          if (!parts.some((part) => part.hideable) && !String(node.nodeValue).includes("%%")) {
-            return;
-          }
-          const fragment = root.document.createDocumentFragment();
-          let plainText = "";
-          const flushPlainText = () => {
-            if (!plainText) return;
-            fragment.appendChild(root.document.createTextNode(plainText));
-            plainText = "";
-          };
-          for (let partIndex = 0; partIndex < parts.length; partIndex += 1) {
-            const part = parts[partIndex];
-            if (!part.hideable) {
-              plainText += part.text;
-              continue;
-            }
-            if (tokenIndex >= MAX_RECITE_TOKENS) {
-              plainText += parts.slice(partIndex).map((item) => item.text).join("");
-              block.dataset.quizifyTokenCapped = "true";
-              break;
-            }
-            flushPlainText();
-            const span = root.document.createElement("span");
-            span.className = `quizify-recite-token${part.manual ? " quizify-recite-manual" : ""}`;
-            span.textContent = part.text;
-            span.tabIndex = 0;
-            span.setAttribute("role", "button");
-            span.dataset.reciteIndex = String(tokenIndex++);
-            span.setAttribute(
-              "aria-label",
-              t("review.recite.unit", { text: part.text })
-            );
-            fragment.appendChild(span);
-          }
-          flushPlainText();
-          (_a3 = node.parentNode) == null ? void 0 : _a3.replaceChild(fragment, node);
-        });
-      }
-      const tokens = Array.from(block.querySelectorAll(".quizify-recite-token")).filter(ownsToken).slice(0, MAX_RECITE_TOKENS);
-      tokens.forEach((token, index) => {
-        token.dataset.reciteIndex = String(index);
-      });
-      function maskedIndices() {
-        return tokens.filter((token) => token.classList.contains("masked")).map((token) => Number(token.dataset.reciteIndex));
-      }
-      function persistBlock() {
-        savedState[blockId] = {
-          mask: Number(slider.value),
-          masked: maskedIndices()
-        };
-        saveReciteState(savedState);
-      }
-      function setMasked(token, masked, persist = true, markRevealed = true) {
-        token.classList.toggle("masked", masked);
-        token.classList.toggle("revealed", !masked && markRevealed);
-        token.setAttribute("aria-pressed", masked ? "false" : "true");
-        if (persist) persistBlock();
-      }
-      function applyMaskSet(indices, persist = true) {
-        const selected = new Set(indices);
-        tokens.forEach((token) => {
-          setMasked(token, selected.has(Number(token.dataset.reciteIndex)), false, false);
-        });
-        output.textContent = `${Number(slider.value)}%`;
-        if (persist) persistBlock();
-      }
-      function reshuffle() {
-        const indices = tokens.map((token) => Number(token.dataset.reciteIndex));
-        for (let index = indices.length - 1; index > 0; index -= 1) {
-          const other = Math.floor(Math.random() * (index + 1));
-          [indices[index], indices[other]] = [indices[other], indices[index]];
-        }
-        const ratio = Math.max(0, Math.min(100, Number(slider.value))) / 100;
-        const count = ratio > 0 && indices.length ? Math.max(1, Math.round(indices.length * ratio)) : 0;
-        applyMaskSet(indices.slice(0, count));
-      }
-      function revealNext() {
-        const token = tokens.find((item) => item.classList.contains("masked"));
-        if (token) setMasked(token, false);
-      }
-      function revealAll() {
-        applyMaskSet([]);
-      }
-      const scrub = {
-        active: false,
-        changed: false,
-        didScrub: false,
-        longPressed: false,
-        moved: false,
-        pointerId: null,
-        pointerType: "",
-        startToken: null,
-        startX: 0,
-        startY: 0,
-        timer: null
-      };
-      function tokenFromTarget(target) {
-        var _a3;
-        const token = (_a3 = target == null ? void 0 : target.closest) == null ? void 0 : _a3.call(target, ".quizify-recite-token");
-        return token && ownsToken(token) ? token : null;
-      }
-      function canScrub(event) {
-        return canReciteScrub(
-          event.pointerType,
-          event.button === void 0 ? 0 : event.button
-        );
-      }
-      function revealScrubToken(token) {
-        var _a3;
-        if (!((_a3 = token == null ? void 0 : token.classList) == null ? void 0 : _a3.contains("masked"))) return;
-        setMasked(token, false, false);
-        scrub.changed = true;
-      }
-      function scrubTokenAtPoint(x2, y2) {
-        var _a3, _b;
-        const hit = (_b = (_a3 = root.document).elementFromPoint) == null ? void 0 : _b.call(_a3, x2, y2);
-        return tokenFromTarget(hit);
-      }
-      function cancelTimer() {
-        if (scrub.timer !== null) {
-          const cancel = root.clearTimeout || clearTimeout;
-          cancel.call(root, scrub.timer);
-          scrub.timer = null;
-        }
-      }
-      function finishScrub() {
-        const shouldPersist = scrub.active;
-        scrub.active = false;
-        block.dataset.scrubbing = "false";
-        tokens.forEach((token) => token.classList.remove("peeking"));
-        if (shouldPersist) {
-          if (scrub.changed) persistBlock();
-        }
-        scrub.changed = false;
-      }
-      function updateScrubAt(x2, y2) {
-        const movedEnough = isReciteScrubMove(x2 - scrub.startX, y2 - scrub.startY);
-        if (!scrub.didScrub && !movedEnough) return false;
-        if (!scrub.didScrub) {
-          scrub.didScrub = true;
-          block.dataset.scrubbing = "true";
-          revealScrubToken(scrub.startToken);
-        }
-        revealScrubToken(scrubTokenAtPoint(x2, y2));
-        return true;
-      }
-      function endPointer(cancelled = false) {
-        const startToken = scrub.startToken;
-        cancelTimer();
-        startToken == null ? void 0 : startToken.classList.remove("peeking");
-        if (!cancelled && startToken && !scrub.moved && !scrub.longPressed && !scrub.didScrub) {
-          setMasked(startToken, !startToken.classList.contains("masked"));
-        }
-        finishScrub();
-        scrub.pointerId = null;
-        scrub.pointerType = "";
-        scrub.startToken = null;
-      }
-      activeLifecycle.listen(block, "pointerdown", (event) => {
-        const token = tokenFromTarget(event.target);
-        if (!token || event.button !== void 0 && event.button !== 0) return;
-        cancelTimer();
-        scrub.active = canScrub(event);
-        scrub.changed = false;
-        scrub.didScrub = false;
-        scrub.longPressed = false;
-        scrub.moved = false;
-        scrub.pointerId = event.pointerId;
-        scrub.pointerType = String(event.pointerType || "mouse").toLowerCase();
-        scrub.startToken = token;
-        scrub.startX = event.clientX;
-        scrub.startY = event.clientY;
-        const schedule = root.setTimeout || setTimeout;
-        scrub.timer = schedule.call(root, () => {
-          var _a3, _b;
-          scrub.timer = null;
-          scrub.longPressed = true;
-          if (token.classList.contains("masked")) token.classList.add("peeking");
-          if (canArmReciteTouchScrub(scrub.pointerType)) {
-            scrub.active = true;
-            block.dataset.scrubbing = "armed";
-            (_b = (_a3 = root.navigator) == null ? void 0 : _a3.vibrate) == null ? void 0 : _b.call(_a3, 18);
-          }
-        }, canArmReciteTouchScrub(scrub.pointerType) ? 380 : 320);
-      });
-      activeLifecycle.listen(block, "pointermove", (event) => {
-        var _a3, _b;
-        if (scrub.pointerId === null || event.pointerId !== scrub.pointerId) return;
-        if (Math.hypot(event.clientX - scrub.startX, event.clientY - scrub.startY) > 10) {
-          scrub.moved = true;
-          cancelTimer();
-          (_a3 = scrub.startToken) == null ? void 0 : _a3.classList.remove("peeking");
-        }
-        if (scrub.pointerType === "touch" || !scrub.active) return;
-        if (updateScrubAt(event.clientX, event.clientY)) (_b = event.preventDefault) == null ? void 0 : _b.call(event);
-      });
-      activeLifecycle.listen(
-        block,
-        "touchmove",
-        (event) => {
-          var _a3;
-          if (!scrub.active || scrub.pointerType !== "touch") return;
-          const touch = (_a3 = event.touches) == null ? void 0 : _a3[0];
-          if (!touch) return;
-          if (updateScrubAt(touch.clientX, touch.clientY)) event.preventDefault();
-        },
-        { passive: false }
-      );
-      activeLifecycle.listen(block, "pointerup", (event) => {
-        if (scrub.pointerId === null || event.pointerId !== scrub.pointerId) return;
-        endPointer(false);
-      });
-      activeLifecycle.listen(block, "pointercancel", (event) => {
-        if (scrub.pointerId === null || event.pointerId !== scrub.pointerId) return;
-        endPointer(true);
-      });
-      activeLifecycle.listen(block, "pointerleave", (event) => {
-        if (scrub.pointerId === null || event.pointerId !== scrub.pointerId) return;
-        endPointer(true);
-      });
-      activeLifecycle.listen(block, "touchend", () => {
-        if (scrub.pointerType === "touch" && scrub.pointerId !== null) endPointer(false);
-      });
-      activeLifecycle.listen(block, "touchcancel", () => {
-        if (scrub.pointerType === "touch" && scrub.pointerId !== null) endPointer(true);
-      });
-      activeLifecycle.listen(block, "contextmenu", (event) => {
-        if (tokenFromTarget(event.target)) event.preventDefault();
-      });
-      activeLifecycle.listen(block, "keydown", (event) => {
-        const token = tokenFromTarget(event.target);
-        if (!token || event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        setMasked(token, !token.classList.contains("masked"));
-      });
-      const saved = savedState[blockId];
-      if (saved && Array.isArray(saved.masked)) {
-        const restoredMask = Math.max(0, Math.min(100, Number(saved.mask)));
-        slider.value = Number.isFinite(restoredMask) ? String(restoredMask) : slider.value;
-        applyMaskSet(saved.masked, false);
-      } else {
-        reshuffle();
-      }
-      activeLifecycle.listen(slider, "input", () => {
-        output.textContent = `${Number(slider.value)}%`;
-        reshuffle();
-      });
-      activeLifecycle.listen(shuffle, "click", reshuffle);
-      activeLifecycle.add(() => {
-        cancelTimer();
-        finishScrub();
-        delete block.dataset.quizifyInitialized;
-        delete block.dataset.scrubbing;
-      });
-      if (tokens.length) {
-        registerRevealController({
-          kind: "recite",
-          element: block,
-          isRevealed: () => !tokens.some((token) => token.classList.contains("masked")),
-          reveal: (options) => (options == null ? void 0 : options.restore) ? revealAll() : revealNext()
-        });
-      }
-    });
+  // src/review/runtime/mask.js
+  var BOUND_ATTRIBUTE = "data-quizify-mask-bound";
+  function isRevealed(element) {
+    return element.classList.contains("revealed");
   }
-
-  // src/review/runtime/occlusion.js
-  function initOcclusion({ root, registerRevealController, lifecycle = null }) {
-    if (!root.document) return;
-    const activeLifecycle = resolveRuntimeLifecycle(root, lifecycle);
-    root.document.querySelectorAll(".quizify-occlusion").forEach((figure) => {
-      if (figure.dataset.quizifyInitialized === "true") return;
-      const regions = Array.from(
-        figure.querySelectorAll(".quizify-occlusion-region")
-      );
-      if (!regions.length) return;
-      figure.dataset.quizifyInitialized = "true";
-      regions.forEach((region) => {
-        region.classList.remove("revealed");
-        region.setAttribute("aria-pressed", "false");
-        function setRevealed(show) {
-          region.classList.toggle("revealed", show);
-          region.setAttribute("aria-pressed", show ? "true" : "false");
-        }
-        function toggle() {
-          setRevealed(!region.classList.contains("revealed"));
-        }
-        activeLifecycle.listen(region, "click", (event) => {
-          var _a2;
-          (_a2 = event.preventDefault) == null ? void 0 : _a2.call(event);
-          toggle();
-        });
-        activeLifecycle.listen(region, "keydown", (event) => {
-          if (event.target !== region) return;
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          toggle();
-        });
-        activeLifecycle.add(() => {
-          region.classList.remove("revealed");
-        });
-        registerRevealController({
-          kind: "occlusion",
-          element: region,
-          isRevealed: () => region.classList.contains("revealed"),
-          reveal: () => setRevealed(true)
-        });
-        if (!region.dataset.quizifyLabelSet) {
-          region.dataset.quizifyLabelSet = "true";
-          const label = region.getAttribute("aria-label");
-          if (label) region.title = label;
-        }
-      });
-      activeLifecycle.add(() => {
-        delete figure.dataset.quizifyInitialized;
-        figure.dataset.occlusionReady = "false";
+  function setRevealed(element, revealed) {
+    element.classList.toggle("revealed", revealed);
+    element.setAttribute("aria-expanded", String(revealed));
+  }
+  function initTextMasks({ root } = {}) {
+    const document2 = root == null ? void 0 : root.document;
+    if (!(document2 == null ? void 0 : document2.querySelectorAll)) return;
+    document2.querySelectorAll(`.quizify-mask:not([${BOUND_ATTRIBUTE}])`).forEach((element) => {
+      element.setAttribute(BOUND_ATTRIBUTE, "true");
+      setRevealed(element, isRevealed(element));
+      const toggle = (event) => {
+        var _a2, _b;
+        (_a2 = event == null ? void 0 : event.preventDefault) == null ? void 0 : _a2.call(event);
+        (_b = event == null ? void 0 : event.stopPropagation) == null ? void 0 : _b.call(event);
+        setRevealed(element, !isRevealed(element));
+      };
+      element.addEventListener("click", toggle);
+      element.addEventListener("keydown", (event) => {
+        const key = event.key;
+        if (key !== "Enter" && key !== " " && key !== "Spacebar") return;
+        toggle(event);
       });
     });
   }
@@ -36157,7 +35228,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       element.dataset.quizifyInitialized = "true";
       secret.style.display = "none";
       element.classList.remove("active");
-      function setRevealed(show) {
+      function setRevealed2(show) {
         var _a2, _b, _c;
         secret.style.display = show ? "inline" : "none";
         (_a2 = secret.setAttribute) == null ? void 0 : _a2.call(secret, "aria-hidden", show ? "false" : "true");
@@ -36175,14 +35246,14 @@ Please report this to https://github.com/markedjs/marked.`, e) {
           "a, button, input, select, textarea"
         );
         if (nestedInteractive && nestedInteractive !== element) return;
-        setRevealed(secret.style.display !== "inline");
+        setRevealed2(secret.style.display !== "inline");
       });
       activeLifecycle.listen(element, "keydown", (event) => {
         if (event.target !== element || event.key !== "Enter" && event.key !== " ") {
           return;
         }
         event.preventDefault();
-        setRevealed(secret.style.display !== "inline");
+        setRevealed2(secret.style.display !== "inline");
       });
       activeLifecycle.add(() => {
         delete element.dataset.quizifyInitialized;
@@ -36191,173 +35262,8 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         kind: "reveal",
         element,
         isRevealed: () => element.classList.contains("active"),
-        reveal: () => setRevealed(true)
+        reveal: () => setRevealed2(true)
       });
-    });
-  }
-
-  // src/review/runtime/audio.js
-  function initAudio({ root, lifecycle = null }) {
-    if (!root.document) return;
-    const activeLifecycle = resolveRuntimeLifecycle(root, lifecycle);
-    root.document.querySelectorAll(".audio-player").forEach((player) => {
-      if (player.dataset.quizifyInitialized === "true") return;
-      const audio = player.querySelector("audio");
-      const playButton = player.querySelector(".play-btn");
-      const replayButton = player.querySelector(".replay-btn");
-      const speed = player.querySelector(".speed-select");
-      const progress = player.querySelector(".progress-bar");
-      const progressContainer = player.querySelector(".progress-container");
-      const currentTime = player.querySelector(".current-time");
-      const duration = player.querySelector(".duration");
-      const setAButton = player.querySelector(".setA-btn");
-      const setBButton = player.querySelector(".setB-btn");
-      const cancelLoopButton = player.querySelector(".cancelLoop-btn");
-      if (!audio || !playButton || !progress || !progressContainer) return;
-      player.dataset.quizifyInitialized = "true";
-      if (!player.dataset.kindLabel) {
-        player.dataset.kindLabel = t("review.audio.kind");
-      }
-      let loopA = null;
-      let loopB = null;
-      let markerA = null;
-      let markerB = null;
-      function formatTime(seconds) {
-        const safe = Number.isFinite(seconds) ? seconds : 0;
-        const minutes = Math.floor(safe / 60);
-        const remainder = Math.floor(safe % 60);
-        return `${minutes}:${remainder.toString().padStart(2, "0")}`;
-      }
-      function createMarker(time, label) {
-        if (!audio.duration) return null;
-        const marker = root.document.createElement("div");
-        marker.className = `ab-marker ab-marker-${label.toLowerCase()}`;
-        marker.dataset.label = label;
-        marker.style.left = `${time / audio.duration * 100}%`;
-        marker.title = t("review.audio.point", {
-          label,
-          time: formatTime(time)
-        });
-        progressContainer.appendChild(marker);
-        return marker;
-      }
-      function removeMarker(marker) {
-        if (marker && progressContainer.contains(marker)) progressContainer.removeChild(marker);
-      }
-      function setPlayButtonState(isPlaying) {
-        playButton.classList.toggle("playing", isPlaying);
-        const label = t(isPlaying ? "review.audio.pause" : "review.audio.play");
-        playButton.setAttribute("aria-label", label);
-        playButton.title = label;
-      }
-      function updateLoopControls() {
-        const hasA = loopA !== null;
-        const hasB = loopB !== null;
-        setAButton == null ? void 0 : setAButton.classList.toggle("active", hasA);
-        setBButton == null ? void 0 : setBButton.classList.toggle("active", hasB);
-        setAButton == null ? void 0 : setAButton.setAttribute("aria-pressed", String(hasA));
-        setBButton == null ? void 0 : setBButton.setAttribute("aria-pressed", String(hasB));
-        if (cancelLoopButton) cancelLoopButton.disabled = !hasA && !hasB;
-      }
-      function requestPlay() {
-        var _a2, _b;
-        (_b = (_a2 = audio.play()) == null ? void 0 : _a2.catch) == null ? void 0 : _b.call(_a2, () => setPlayButtonState(false));
-      }
-      activeLifecycle.listen(audio, "loadedmetadata", () => {
-        if (duration) duration.textContent = formatTime(audio.duration);
-      });
-      activeLifecycle.listen(audio, "play", () => setPlayButtonState(true));
-      activeLifecycle.listen(audio, "pause", () => setPlayButtonState(false));
-      activeLifecycle.listen(audio, "ended", () => setPlayButtonState(false));
-      activeLifecycle.listen(playButton, "click", () => {
-        if (audio.paused) requestPlay();
-        else audio.pause();
-      });
-      if (replayButton) activeLifecycle.listen(replayButton, "click", () => {
-        audio.currentTime = 0;
-        if (audio.paused) requestPlay();
-      });
-      if (speed) activeLifecycle.listen(speed, "change", () => {
-        audio.playbackRate = Number(speed.value);
-      });
-      activeLifecycle.listen(audio, "timeupdate", () => {
-        if (!audio.duration) return;
-        const percent = Math.max(0, Math.min(100, audio.currentTime / audio.duration * 100));
-        progress.style.width = `${percent}%`;
-        progressContainer.setAttribute("aria-valuenow", String(Math.round(percent)));
-        if (currentTime) currentTime.textContent = formatTime(audio.currentTime);
-        if (loopA !== null && loopB !== null && audio.currentTime >= loopB) {
-          audio.currentTime = loopA;
-        }
-      });
-      activeLifecycle.listen(progressContainer, "click", (event) => {
-        if (!audio.duration) return;
-        const rect = progressContainer.getBoundingClientRect();
-        const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-        audio.currentTime = ratio * audio.duration;
-      });
-      activeLifecycle.listen(progressContainer, "keydown", (event) => {
-        if (!audio.duration) return;
-        const step = Math.max(2, Math.min(10, audio.duration * 0.05));
-        if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
-          event.preventDefault();
-          audio.currentTime = Math.max(0, audio.currentTime - step);
-        } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
-          event.preventDefault();
-          audio.currentTime = Math.min(audio.duration, audio.currentTime + step);
-        } else if (event.key === "Home") {
-          event.preventDefault();
-          audio.currentTime = 0;
-        } else if (event.key === "End") {
-          event.preventDefault();
-          audio.currentTime = audio.duration;
-        }
-      });
-      if (setAButton) activeLifecycle.listen(setAButton, "click", () => {
-        loopA = audio.currentTime;
-        if (loopB !== null && loopB < loopA) {
-          loopB = null;
-          removeMarker(markerB);
-          markerB = null;
-        }
-        removeMarker(markerA);
-        markerA = createMarker(loopA, "A");
-        updateLoopControls();
-      });
-      if (setBButton) activeLifecycle.listen(setBButton, "click", () => {
-        loopB = audio.currentTime;
-        if (loopA !== null && loopB < loopA) {
-          [loopA, loopB] = [loopB, loopA];
-          removeMarker(markerA);
-          removeMarker(markerB);
-          markerA = createMarker(loopA, "A");
-          markerB = createMarker(loopB, "B");
-          updateLoopControls();
-          return;
-        }
-        removeMarker(markerB);
-        markerB = createMarker(loopB, "B");
-        updateLoopControls();
-      });
-      if (cancelLoopButton) activeLifecycle.listen(cancelLoopButton, "click", () => {
-        loopA = null;
-        loopB = null;
-        removeMarker(markerA);
-        removeMarker(markerB);
-        markerA = null;
-        markerB = null;
-        updateLoopControls();
-      });
-      activeLifecycle.add(() => {
-        try {
-          audio.pause();
-        } catch {
-        }
-        removeMarker(markerA);
-        removeMarker(markerB);
-        delete player.dataset.quizifyInitialized;
-      });
-      updateLoopControls();
     });
   }
 
@@ -37035,9 +35941,121 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   }
 
   // src/shared/anki-field.js
+  var TRANSPORT_BLOCK = /^(?:div|p)$/i;
+  var ANY_TAG = /<(\/?)([a-zA-Z][\w:-]*)\b[^>]*?(\/?)>/g;
+  var AUTHORED_BLOCK = /* @__PURE__ */ new Set([
+    "address",
+    "article",
+    "aside",
+    "audio",
+    "blockquote",
+    "button",
+    "canvas",
+    "caption",
+    "center",
+    "col",
+    "colgroup",
+    "dd",
+    "details",
+    "dialog",
+    "dir",
+    "div",
+    "dl",
+    "dt",
+    "embed",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "hr",
+    "iframe",
+    "input",
+    "legend",
+    "li",
+    "main",
+    "menu",
+    "nav",
+    "object",
+    "ol",
+    "optgroup",
+    "option",
+    "p",
+    "picture",
+    "pre",
+    "script",
+    "section",
+    "select",
+    "style",
+    "summary",
+    "table",
+    "tbody",
+    "td",
+    "template",
+    "textarea",
+    "tfoot",
+    "th",
+    "thead",
+    "tr",
+    "ul",
+    "video"
+  ]);
+  function isEditorTransport(html2) {
+    if (!html2.includes("<")) return false;
+    let depth = 0;
+    let blocks = 0;
+    let position = 0;
+    let match;
+    ANY_TAG.lastIndex = 0;
+    while ((match = ANY_TAG.exec(html2)) !== null) {
+      if (depth === 0 && /\S/.test(html2.slice(position, match.index))) return false;
+      position = ANY_TAG.lastIndex;
+      const [, closing, name, selfClosing] = match;
+      const tag = name.toLowerCase();
+      if (depth === 0) {
+        if (!TRANSPORT_BLOCK.test(tag)) return false;
+      } else if (!closing && AUTHORED_BLOCK.has(tag)) {
+        return false;
+      }
+      if (selfClosing || !TRANSPORT_BLOCK.test(tag)) continue;
+      if (closing) {
+        depth -= 1;
+        if (depth < 0) return false;
+      } else {
+        depth += 1;
+        if (depth === 1) blocks += 1;
+      }
+    }
+    if (depth === 0 && /\S/.test(html2.slice(position))) return false;
+    return depth === 0 && blocks > 0;
+  }
+  var ANKI_BREAK = "\0";
+  var ANKI_BOUNDARY = "";
+  var TRANSPORT_TAG = /<\/?(?:div|p)\b[^>]*>/gi;
+  var MARKER_RUN = /[\u0000\u0001]+/g;
+  function transportToLineBreaks(html2) {
+    return html2.replace(/<br\s*\/?>/gi, ANKI_BREAK).replace(TRANSPORT_TAG, ANKI_BOUNDARY).replace(MARKER_RUN, (run) => {
+      const explicit = run.split(ANKI_BREAK).length - 1;
+      const boundaries = run.includes(ANKI_BOUNDARY) ? 1 : 0;
+      return "\n".repeat(Math.min(2, explicit + boundaries));
+    }).replace(/^\n+|\n+$/g, "");
+  }
+  function blockTagsToLineBreaks(html2) {
+    return isEditorTransport(html2) ? transportToLineBreaks(html2) : html2.replace(/<br\s*\/?>/gi, "\n");
+  }
   function decodeAnkiFieldHtml(html2, documentRef = globalThis.document) {
     var _a2;
-    const text3 = String(html2 != null ? html2 : "").replace(/&nbsp;/g, " ").replace(/<br\s*\/?>/gi, "\n");
+    const text3 = blockTagsToLineBreaks(
+      String(html2 != null ? html2 : "").replace(/&nbsp;/g, " ")
+    );
     const decoder = ((_a2 = documentRef == null ? void 0 : documentRef.createElement) == null ? void 0 : _a2.call(documentRef, "textarea")) || null;
     const fallback = () => text3.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, "&");
     if (!decoder) return fallback();
@@ -37086,30 +36104,21 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       (_b = (_a2 = root.console) == null ? void 0 : _a2.warn) == null ? void 0 : _b.call(_a2, "Quizify cleanup failed", error);
     });
     const {
-      canArmReciteTouchScrub,
-      canReciteScrub,
       createQuizifyExtensions,
       createQuizifyRenderer,
       escapeHtml,
-      isReciteScrubMove,
       markerStart,
       parseChoiceBlock,
       parseChoiceOptions,
-      parseReciteBlock,
-      parseReciteOptions,
-      parseTabsBlock,
-      tokenizeReciteText
+      parseTabsBlock
     } = createMarkdownTools(state);
     const {
-      clearReciteState,
       clearRevealProgress,
       clearUserAnswers,
       loadFloatingPosition,
-      loadReciteState,
       loadRevealProgress,
       loadUserAnswers,
       saveFloatingPosition,
-      saveReciteState,
       saveRevealProgress,
       saveUserAnswers
     } = createReviewStorage(root);
@@ -37404,7 +36413,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       if (!root.isBack) {
         clearUserAnswers();
         clearRevealProgress();
-        clearReciteState();
       }
       state.revealControllers = state.revealControllers.filter(
         (controller) => {
@@ -37420,29 +36428,13 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         saveUserAnswers,
         registerRevealController
       });
-      initOcclusion({
-        root,
-        registerRevealController,
-        lifecycle: runtimeLifecycle
-      });
-      initRecite({
-        root,
-        loadReciteState,
-        saveReciteState,
-        tokenizeReciteText,
-        canReciteScrub,
-        canArmReciteTouchScrub,
-        isReciteScrubMove,
-        registerRevealController,
-        lifecycle: runtimeLifecycle
-      });
       initTabs({ root, lifecycle: runtimeLifecycle });
+      initTextMasks({ root });
       initCollapses({
         root,
         lifecycle: runtimeLifecycle,
         registerRevealController
       });
-      initAudio({ root, lifecycle: runtimeLifecycle });
       initAnnotations({
         root,
         lifecycle: runtimeLifecycle,
@@ -37488,12 +36480,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
         parseChoiceOptions,
         parseChoiceBlock,
         parseTabsBlock,
-        parseReciteBlock,
-        parseReciteOptions,
-        tokenizeReciteText,
-        canReciteScrub,
-        canArmReciteTouchScrub,
-        isReciteScrubMove,
         activateTabPane,
         prepareRevealContext,
         directionFromDelta,
@@ -37895,16 +36881,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     });
     return root;
   }
-  function parserTools() {
-    var _a2;
-    const tools = ((_a2 = globalThis.myquizify) == null ? void 0 : _a2._internal) || {};
-    return {
-      canArmReciteTouchScrub: tools.canArmReciteTouchScrub || ((pointerType) => pointerType === "touch"),
-      canReciteScrub: tools.canReciteScrub || ((pointerType, button) => pointerType !== "touch" && button === 0),
-      isReciteScrubMove: tools.isReciteScrubMove || ((deltaX, deltaY) => Math.hypot(deltaX, deltaY) > 10),
-      tokenizeReciteText: tools.tokenizeReciteText || ((text3) => [{ text: text3, hideable: false }])
-    };
-  }
   function disposePreviewInteractions(scope) {
     const active = activePreviews.get(scope);
     if (!active) return;
@@ -37922,7 +36898,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
     const root = previewRoot(scope, isBack);
     const lifecycle = createLifecycle();
     const userAnswers = { fitbs: {}, mcqs: {} };
-    const reciteState = {};
     const registerRevealController = () => {
     };
     const saveUserAnswers = () => {
@@ -37934,18 +36909,9 @@ Please report this to https://github.com/markedjs/marked.`, e) {
       saveUserAnswers,
       registerRevealController
     });
-    initRecite({
-      root,
-      loadReciteState: () => reciteState,
-      saveReciteState: () => {
-      },
-      ...parserTools(),
-      registerRevealController,
-      lifecycle
-    });
     initTabs({ root, lifecycle });
+    initTextMasks({ root });
     initCollapses({ root, lifecycle, registerRevealController });
-    initAudio({ root, lifecycle });
     initAnnotations({ root, lifecycle, registerRevealController });
     initReveal({ root, lifecycle, registerRevealController });
     initChoices({
@@ -39116,6 +38082,9 @@ body {
   --q-primary-strong: #0b625a;
   --q-primary-soft: #e1f3ef;
   --q-primary-glow: rgba(20, 125, 114, 0.16);
+  --q-mask-fill: #1f8f4d;
+  --q-mask-fill-soft: rgba(31, 143, 77, 0.16);
+  --q-mask-text: #f4fff8;
   --q-control-primary: #147d72;
   --q-control-primary-hover: #0b625a;
   --q-control-on-primary: #ffffff;
@@ -39173,11 +38142,6 @@ body {
     Menlo,
     monospace;
   --q-transition: 160ms ease;
-  --q-occlusion-mask: rgba(18, 26, 24, 0.9);
-  --q-occlusion-border: rgba(148, 232, 214, 0.85);
-  --q-occlusion-revealed-border: rgba(20, 125, 114, 0.45);
-  --q-occlusion-label: #ffffff;
-  --q-occlusion-label-halo: rgba(12, 20, 18, 0.55);
 }
 pre > code.quizify-code-lines {
   display: block;
@@ -39227,6 +38191,9 @@ body.ankidroid_dark_mode,
   --q-primary-strong: #9ce9dc;
   --q-primary-soft: #173b35;
   --q-primary-glow: rgba(103, 214, 195, 0.18);
+  --q-mask-fill: #2fae63;
+  --q-mask-fill-soft: rgba(47, 174, 99, 0.22);
+  --q-mask-text: #04140a;
   --q-control-primary: #177f70;
   --q-control-primary-hover: #209783;
   --q-control-on-primary: #ffffff;
@@ -39264,11 +38231,6 @@ body.ankidroid_dark_mode,
   --q-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), 0 4px 18px rgba(0, 0, 0, 0.24);
   --q-shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.28);
   --q-shadow-lift: 0 18px 44px rgba(0, 0, 0, 0.4);
-  --q-occlusion-mask: rgba(10, 16, 18, 0.92);
-  --q-occlusion-border: rgba(103, 214, 195, 0.7);
-  --q-occlusion-revealed-border: rgba(103, 214, 195, 0.5);
-  --q-occlusion-label: #f4fbf9;
-  --q-occlusion-label-halo: rgba(8, 14, 13, 0.7);
 }
 :root[data-quizify-theme=gezhi],
 [data-quizify-theme=gezhi],
@@ -39288,6 +38250,9 @@ body.ankidroid_dark_mode,
   --q-primary-strong: #134857;
   --q-primary-soft: #e5f0f1;
   --q-primary-glow: rgba(18, 110, 130, 0.14);
+  --q-mask-fill: #2b8a4b;
+  --q-mask-fill-soft: rgba(43, 138, 75, 0.16);
+  --q-mask-text: #f4fff8;
   --q-control-primary: #126e82;
   --q-control-primary-hover: #134857;
   --q-control-on-primary: #fffefa;
@@ -39325,11 +38290,6 @@ body.ankidroid_dark_mode,
   --q-shadow: 0 18px 46px rgba(85, 70, 59, 0.12), 0 4px 10px rgba(85, 70, 59, 0.08);
   --q-shadow-soft: 0 7px 20px rgba(85, 70, 59, 0.09), 0 2px 6px rgba(85, 70, 59, 0.06);
   --q-shadow-lift: 0 12px 28px rgba(85, 70, 59, 0.14);
-  --q-occlusion-mask: rgba(60, 44, 24, 0.82);
-  --q-occlusion-border: rgba(193, 145, 74, 0.85);
-  --q-occlusion-revealed-border: rgba(18, 110, 130, 0.5);
-  --q-occlusion-label: #fffdf7;
-  --q-occlusion-label-halo: rgba(74, 52, 30, 0.6);
   --q-radius: 8px;
   --q-radius-sm: 4px;
   --q-font:
@@ -39411,6 +38371,9 @@ body.ankidroid_dark_mode,
   --q-primary-strong: #93b5cf;
   --q-primary-soft: #354552;
   --q-primary-glow: rgba(102, 169, 201, 0.18);
+  --q-mask-fill: #35a865;
+  --q-mask-fill-soft: rgba(53, 168, 101, 0.22);
+  --q-mask-text: #04140a;
   --q-control-primary: #4f879f;
   --q-control-primary-hover: #66a9c9;
   --q-control-on-primary: #fffef9;
@@ -39448,11 +38411,6 @@ body.ankidroid_dark_mode,
   --q-shadow: 0 20px 52px rgba(19, 17, 36, 0.38), 0 4px 12px rgba(19, 17, 36, 0.3);
   --q-shadow-soft: 0 8px 24px rgba(19, 17, 36, 0.3);
   --q-shadow-lift: 0 14px 34px rgba(19, 17, 36, 0.42);
-  --q-occlusion-mask: rgba(9, 12, 20, 0.92);
-  --q-occlusion-border: rgba(102, 169, 201, 0.72);
-  --q-occlusion-revealed-border: rgba(102, 169, 201, 0.5);
-  --q-occlusion-label: #eef4f6;
-  --q-occlusion-label-halo: rgba(15, 14, 22, 0.7);
   --q-radius: 8px;
   --q-radius-sm: 4px;
   --q-font:
@@ -40534,159 +39492,6 @@ summary:hover {
   display: block;
   animation: quizify-fade-in 140ms ease-out;
 }
-.quizify-recite {
-  position: relative;
-  margin: 1.2em 0;
-  overflow: hidden;
-  background:
-    linear-gradient(
-      145deg,
-      var(--q-surface-raised),
-      color-mix(in srgb, var(--q-primary-soft) 34%, var(--q-surface)));
-  border: 1px solid color-mix(in srgb, var(--q-primary) 24%, var(--q-border));
-  border-radius: var(--q-radius);
-  box-shadow: var(--q-shadow-soft);
-}
-.quizify-recite[data-scrubbing=armed]::after {
-  content: attr(data-scrub-label);
-  position: absolute;
-  z-index: 3;
-  top: 10px;
-  right: 10px;
-  padding: 4px 8px;
-  background: var(--q-tooltip-bg);
-  border-radius: 999px;
-  box-shadow: var(--q-shadow-soft);
-  color: var(--q-tooltip-text);
-  font-size: 0.7rem;
-  font-weight: 760;
-  letter-spacing: 0.04em;
-  line-height: 1.25;
-  pointer-events: none;
-}
-.quizify-recite-content {
-  padding: 20px;
-}
-.quizify-recite-content > :first-child {
-  margin-top: 0;
-}
-.quizify-recite-content > :last-child {
-  margin-bottom: 0;
-}
-.quizify-recite-token {
-  display: inline;
-  border-radius: 0.32em;
-  cursor: pointer;
-  outline: none;
-  transition:
-    color var(--q-transition),
-    background var(--q-transition),
-    box-shadow var(--q-transition),
-    opacity var(--q-transition);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-.quizify-recite-token.masked {
-  padding: 0.08em 0.16em;
-  background:
-    linear-gradient(
-      110deg,
-      transparent 20%,
-      rgba(255, 255, 255, 0.2) 42%,
-      transparent 62%) 0 0 / 220% 100%,
-    color-mix(in srgb, var(--q-primary) 38%, var(--q-border));
-  color: transparent;
-  text-shadow: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.quizify-recite-token.masked:hover,
-.quizify-recite-token.masked:focus-visible {
-  background: var(--q-primary-soft);
-  box-shadow: 0 0 0 2px var(--q-primary-soft);
-}
-.quizify-recite-token.masked.peeking {
-  background: var(--q-primary-soft);
-  color: var(--q-text);
-  opacity: 0.66;
-}
-.quizify-recite[data-scrubbing=true] .quizify-recite-content {
-  cursor: crosshair;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.quizify-recite[data-scrubbing=true] .quizify-recite-token.masked {
-  background: color-mix(in srgb, var(--q-primary) 48%, var(--q-border));
-  box-shadow: 0 0 0 2px var(--q-primary-glow);
-  cursor: crosshair;
-}
-.quizify-recite-token.revealed {
-  color: var(--q-primary-strong);
-}
-.quizify-recite-manual {
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--q-primary) 35%, transparent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.18em;
-}
-.quizify-recite-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 11px 14px;
-  background: color-mix(in srgb, var(--q-primary-soft) 62%, var(--q-surface-soft));
-  border-top: 1px solid var(--q-border);
-  color: var(--q-muted);
-  font-size: 0.8rem;
-  line-height: 1.3;
-}
-.quizify-recite-slider {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-}
-.quizify-recite-slider input[type=range] {
-  flex: 1 1 auto;
-  min-width: 80px;
-  accent-color: var(--q-primary);
-}
-.quizify-recite-slider output {
-  min-width: 3.2em;
-  color: var(--q-primary-strong);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  text-align: right;
-}
-button.quizify-recite-shuffle {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 5px 10px;
-  background: var(--q-surface-raised);
-  border: 1px solid color-mix(in srgb, var(--q-primary) 24%, var(--q-border));
-  border-radius: var(--q-radius-sm);
-  color: var(--q-primary-strong);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-}
-.quizify-recite-shuffle-icon {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 auto;
-  pointer-events: none;
-}
-button.quizify-recite-shuffle:hover,
-button.quizify-recite-shuffle:focus-visible {
-  background: var(--q-surface-raised);
-  background-image: none;
-  border-color: var(--q-primary);
-  box-shadow: none;
-}
 .fitb {
   display: inline-flex;
   align-items: center;
@@ -41072,242 +39877,6 @@ button.feedback-icon:hover {
   margin-inline-start: 0.35em;
   color: var(--q-primary-strong);
   font-weight: 650;
-}
-.audio-player {
-  position: relative;
-  width: min(100%, 500px);
-  margin: 1.2em 0;
-  overflow: hidden;
-  padding: 17px 18px 18px;
-  background:
-    radial-gradient(
-      circle at 100% 0,
-      color-mix(in srgb, var(--q-primary-glow) 62%, transparent),
-      transparent 38%),
-    linear-gradient(
-      145deg,
-      var(--q-surface-raised),
-      color-mix(in srgb, var(--q-primary-soft) 24%, var(--q-surface)));
-  border: 1px solid color-mix(in srgb, var(--q-primary) 20%, var(--q-border));
-  border-radius: var(--q-radius);
-  box-shadow: var(--q-shadow-soft);
-  color: var(--q-text);
-}
-.audio-player:not([data-title=""])::before {
-  content: attr(data-title);
-  display: block;
-  min-width: 0;
-  margin: 0 62px 14px 0;
-  overflow: hidden;
-  color: var(--q-text);
-  font-size: 0.9rem;
-  font-weight: 730;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.audio-player::after {
-  content: attr(data-kind-label);
-  position: absolute;
-  top: 19px;
-  right: 18px;
-  color: var(--q-primary-strong);
-  font-size: 0.62rem;
-  font-weight: 820;
-  letter-spacing: 0.12em;
-  line-height: 1;
-}
-.time-display {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 8px;
-  color: var(--q-muted);
-  font-size: 0.76rem;
-  font-weight: 620;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-.current-time {
-  color: var(--q-primary-strong);
-  font-size: 0.86rem;
-  font-weight: 760;
-}
-.progress-container {
-  position: relative;
-  height: 8px;
-  margin: 10px 0 16px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--q-border) 72%, var(--q-surface-soft));
-  border: 0;
-  border-radius: 999px;
-  box-shadow: inset 0 1px 2px rgba(26, 47, 41, 0.12);
-  cursor: pointer;
-}
-.progress-container:focus-visible {
-  outline: 2px solid var(--q-primary);
-  outline-offset: 3px;
-}
-.progress-bar {
-  width: 0;
-  height: 100%;
-  background:
-    linear-gradient(
-      90deg,
-      var(--q-primary),
-      #4eb8a6);
-  border-radius: inherit;
-  transition: width 100ms linear;
-}
-.ab-marker {
-  position: absolute;
-  top: 0;
-  width: 4px;
-  height: 100%;
-  margin-left: -2px;
-  background: var(--q-primary-strong);
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--q-surface) 76%, transparent);
-  pointer-events: none;
-}
-.ab-marker-b {
-  background: var(--q-accent);
-}
-.player-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.audio-player .player-controls button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  margin: 0;
-  padding: 0;
-  background: var(--q-surface-soft);
-  background-image: none;
-  border: 1px solid var(--q-border);
-  border-radius: 999px;
-  box-shadow: none;
-  color: var(--q-muted);
-  cursor: pointer;
-  font: inherit;
-  line-height: 1;
-  outline: none;
-  transition:
-    background var(--q-transition),
-    border-color var(--q-transition),
-    color var(--q-transition),
-    box-shadow var(--q-transition),
-    transform var(--q-transition);
-}
-.player-controls button:hover {
-  background: var(--q-primary-soft);
-  border-color: var(--q-primary);
-  color: var(--q-primary-strong);
-}
-.player-controls button:active {
-  transform: scale(0.95);
-}
-.player-controls button.play-btn {
-  width: 44px;
-  height: 44px;
-  background:
-    linear-gradient(
-      145deg,
-      var(--q-control-primary-hover),
-      var(--q-control-primary));
-  border-color: color-mix(in srgb, var(--q-control-primary) 82%, #ffffff);
-  box-shadow: 0 7px 16px color-mix(in srgb, var(--q-primary) 28%, transparent);
-  color: var(--q-control-on-primary);
-}
-.player-controls button.play-btn:hover {
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--q-control-primary-hover) 88%, #ffffff),
-      var(--q-control-primary-hover));
-  border-color: var(--q-control-primary-hover);
-  box-shadow: 0 9px 20px color-mix(in srgb, var(--q-primary) 36%, transparent);
-  color: var(--q-control-on-primary);
-  transform: translateY(-1px);
-}
-.player-controls button.play-btn:active {
-  box-shadow: 0 3px 9px color-mix(in srgb, var(--q-primary) 24%, transparent);
-  transform: scale(0.96);
-}
-.player-controls button.play-btn.playing {
-  box-shadow: 0 7px 18px color-mix(in srgb, var(--q-primary) 38%, transparent), 0 0 0 3px color-mix(in srgb, var(--q-primary) 14%, transparent);
-}
-.audio-icon {
-  display: block;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  fill: none;
-  stroke: currentColor;
-  pointer-events: none;
-}
-.play-btn .audio-icon {
-  width: 19px;
-  height: 19px;
-}
-.audio-icon-play {
-  transform: translateX(1px);
-}
-.audio-icon-pause {
-  display: none;
-}
-.play-btn.playing .audio-icon-play {
-  display: none;
-}
-.play-btn.playing .audio-icon-pause {
-  display: block;
-}
-.audio-letter {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  font-size: 0.78rem;
-  font-weight: 780;
-  line-height: 1;
-}
-.player-controls .setA-btn.active {
-  background: var(--q-primary-soft);
-  border-color: color-mix(in srgb, var(--q-primary) 72%, var(--q-border));
-  color: var(--q-primary-strong);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--q-primary) 14%, transparent);
-}
-.player-controls .setB-btn.active {
-  background: var(--q-warn-soft);
-  border-color: color-mix(in srgb, var(--q-accent) 68%, var(--q-border));
-  color: var(--q-warn);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--q-accent) 12%, transparent);
-}
-.player-controls button:disabled {
-  background: color-mix(in srgb, var(--q-surface-soft) 68%, transparent);
-  border-color: color-mix(in srgb, var(--q-border) 72%, transparent);
-  box-shadow: none;
-  color: color-mix(in srgb, var(--q-muted) 54%, transparent);
-  cursor: default;
-  transform: none;
-}
-.speed-select {
-  min-height: 32px;
-  margin-inline-start: auto;
-  padding: 0 28px 0 10px;
-  background: var(--q-surface-soft);
-  border: 1px solid var(--q-border);
-  border-radius: 999px;
-  color: var(--q-text);
-  font: inherit;
-  font-size: 0.86rem;
-  cursor: pointer;
 }
 button[data-quizify-control]:focus-visible {
   outline: 2px solid var(--q-primary) !important;
@@ -41986,16 +40555,6 @@ body[data-quizify-theme=gezhi] {
   .choice {
     padding: 10px;
   }
-  .quizify-recite-content {
-    padding: 13px;
-  }
-  .quizify-recite-toolbar {
-    gap: 9px;
-    padding: 9px 10px;
-  }
-  .quizify-recite-slider > span {
-    display: none;
-  }
   .option {
     align-items: flex-start;
   }
@@ -42003,18 +40562,6 @@ body[data-quizify-theme=gezhi] {
     min-height: 32px;
     padding: 5px 8px;
     font-size: 0.78rem;
-  }
-  .audio-player {
-    padding: 14px;
-  }
-  .player-controls {
-    gap: 8px;
-    flex-wrap: nowrap;
-  }
-  .speed-select {
-    min-width: 66px;
-    margin-inline-start: auto;
-    padding-inline: 9px;
   }
   .quizify-floating-control {
     right: 64px;
@@ -42042,15 +40589,6 @@ body[data-quizify-theme=gezhi] {
     right: 59px;
   }
 }
-@media (max-width: 380px) {
-  .player-controls {
-    flex-wrap: wrap;
-  }
-  .speed-select {
-    flex: 1 1 100%;
-    margin-inline-start: 0;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   button.quizify-orb,
   .quizify-orb-direction,
@@ -42060,105 +40598,32 @@ body[data-quizify-theme=gezhi] {
   .quizify-reveal-pulse {
     animation: none;
   }
-  .quizify-recite-token {
-    transition: none;
-  }
-  .quizify-floating-control[data-orb-state=busy] .quizify-orb-symbol {
-    animation: none;
-  }
 }
-.quizify-occlusion {
-  display: block;
-  margin: 1.2em auto;
-  max-width: 100%;
-}
-.quizify-occlusion-frame {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  border: 1px solid var(--q-border);
-  border-radius: var(--q-radius-sm);
-  background: var(--q-surface-soft);
-  line-height: 0;
-}
-.quizify-occlusion-frame img.quizify-occlusion-image {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-.quizify-occlusion-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.quizify-occlusion-region {
+.quizify-mask {
+  padding: 0 0.22em;
+  border-radius: 4px;
+  background: var(--q-mask-fill);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--q-mask-fill) 78%, #04140a);
+  color: transparent;
   cursor: pointer;
-  outline: none;
-  pointer-events: all;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--q-transition), box-shadow var(--q-transition);
 }
-.quizify-occlusion-box {
-  fill: var(--q-occlusion-mask);
-  stroke: var(--q-occlusion-border);
-  stroke-width: 0.4;
-  vector-effect: non-scaling-stroke;
-  transition: fill var(--q-transition), stroke var(--q-transition);
+.quizify-mask-text {
+  color: inherit;
+  text-shadow: none;
 }
-.quizify-occlusion-region:focus-visible .quizify-occlusion-box {
-  stroke: var(--q-primary);
-  stroke-width: 1.4;
+.quizify-mask:focus-visible {
+  outline: 2px solid var(--q-mask-fill);
+  outline-offset: 2px;
 }
-.quizify-occlusion-content {
-  opacity: 0;
-  transition: opacity var(--q-transition);
-}
-.quizify-occlusion-label {
-  fill: var(--q-occlusion-label);
-  font-size: 3.4px;
-  font-weight: 700;
-  font-family: var(--q-font);
-  paint-order: stroke;
-  stroke: var(--q-occlusion-label-halo);
-  stroke-width: 0.5px;
-  stroke-linejoin: round;
-}
-.quizify-occlusion-region.revealed .quizify-occlusion-box {
-  fill: transparent;
-  stroke: var(--q-occlusion-revealed-border);
-  stroke-dasharray: 1.4 1.1;
-}
-.quizify-occlusion-region.revealed .quizify-occlusion-content {
-  opacity: 1;
-}
-.quizify-occlusion-caption {
-  margin: 0.5em 0 0;
-  color: var(--q-muted);
-  font-size: 0.86em;
-  text-align: center;
-  line-height: 1.5;
-}
-.quizify-occlusion-caption > :first-child {
-  margin-top: 0;
-}
-.quizify-occlusion-caption > :last-child {
-  margin-bottom: 0;
-}
-.quizify-occlusion-missing {
-  padding: 0.7em 0.9em;
-  border: 1px dashed var(--q-error);
-  border-radius: var(--q-radius-sm);
-  background: var(--q-error-soft);
-  color: var(--q-error);
-  font-size: 0.86em;
-  text-align: center;
+.quizify-mask.revealed {
+  background: var(--q-mask-fill-soft);
+  box-shadow: inset 0 -0.14em 0 var(--q-mask-fill);
+  color: inherit;
 }
 @media (prefers-reduced-motion: reduce) {
-  .quizify-occlusion-box,
-  .quizify-occlusion-content {
+  .quizify-mask {
     transition: none;
   }
 }
@@ -42359,10 +40824,8 @@ body[data-quizify-theme=gezhi] {
 dompurify/dist/purify.es.mjs:
   (*! @license DOMPurify 3.4.12 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.4.12/LICENSE *)
 
-lucide/dist/esm/icons/audio-lines.mjs:
 lucide/dist/esm/icons/badge-alert.mjs:
 lucide/dist/esm/icons/bold.mjs:
-lucide/dist/esm/icons/book-open-check.mjs:
 lucide/dist/esm/icons/braces.mjs:
 lucide/dist/esm/icons/check.mjs:
 lucide/dist/esm/icons/chevron-down.mjs:

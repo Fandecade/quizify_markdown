@@ -56,7 +56,7 @@
       <h2 class="preview-title">Configuration panel</h2>
       <div class="settings-window">
         <header class="settings-hero">
-          <div class="settings-brand"><span class="settings-logo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7.5"></circle><path d="m16.3 16.3 4.7 4.7"></path><path d="m7.7 11.2 2.2 2.2 4.5-4.7"></path></svg></span><div class="settings-heading"><strong>Quizify Markdown</strong><span>Knowledge Canvas · 插件设置</span></div><span class="version">v2.0.0</span></div>
+          <div class="settings-brand"><span class="settings-logo"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7.5"></circle><path d="m16.3 16.3 4.7 4.7"></path><path d="m7.7 11.2 2.2 2.2 4.5-4.7"></path></svg></span><div class="settings-heading"><strong>Quizify Markdown</strong><span>Knowledge Canvas · 插件设置</span></div><span class="version">v2.1.1</span></div>
           <p class="developer">开发者　<b>chehil@163.com</b>　· 2026.07</p>
         </header>
         <main class="settings-content">
@@ -96,9 +96,8 @@
                 <button class="quizify-tool-button quizify-snippet-button" title="批注 (Ctrl+Alt+4)" aria-label="Quizify 题型：批注，快捷键 Ctrl+Alt+4"><i data-lucide="message-square-text" class="quizify-command-icon"></i><kbd class="quizify-shortcut">Ctrl+Alt+4</kbd></button>
                 <button class="quizify-tool-button quizify-snippet-button" title="折叠 (Ctrl+Alt+5)" aria-label="Quizify 题型：折叠，快捷键 Ctrl+Alt+5"><i data-lucide="list-collapse" class="quizify-command-icon"></i><kbd class="quizify-shortcut">Ctrl+Alt+5</kbd></button>
                 <button class="quizify-tool-button quizify-snippet-button" title="标签页 (Ctrl+Alt+6)" aria-label="Quizify 题型：标签页，快捷键 Ctrl+Alt+6"><i data-lucide="panels-top-left" class="quizify-command-icon"></i><kbd class="quizify-shortcut">Ctrl+Alt+6</kbd></button>
-                <button class="quizify-tool-button quizify-snippet-button" title="音频 (Ctrl+Alt+7)" aria-label="Quizify 题型：音频，快捷键 Ctrl+Alt+7"><i data-lucide="audio-lines" class="quizify-command-icon"></i><kbd class="quizify-shortcut">Ctrl+Alt+7</kbd></button>
-                <button class="quizify-tool-button quizify-snippet-button" title="背诵 (Ctrl+Alt+8)" aria-label="Quizify 题型：背诵，快捷键 Ctrl+Alt+8"><i data-lucide="book-open-check" class="quizify-command-icon"></i><kbd class="quizify-shortcut">Ctrl+Alt+8</kbd></button>
-            <details class="quizify-inspector"><summary class="quizify-tool-button quizify-diagnostics-status" data-state="ok" title="语法通过" aria-label="语法检查：通过"><i data-lucide="circle-check" class="quizify-command-icon"></i></summary><div class="quizify-inspector-panel"><ul class="quizify-diagnostics-list"></ul><section class="quizify-preview"><div class="quizify-preview-header"><strong>结构预览</strong><span class="quizify-preview-meta"><span class="quizify-preview-field">Front</span><span class="quizify-preview-count">2 个结构</span></span></div><ol class="quizify-preview-list"><li data-kind="fitb"><span class="quizify-preview-kind">填空</span><strong>第 3 行</strong><span class="quizify-preview-detail">答案：面向连接</span></li><li data-kind="recite"><span class="quizify-preview-kind">背诵</span><strong>第 5 行</strong><span class="quizify-preview-detail">遮挡：40%；模式：mixed</span></li></ol></section></div></details>
+                <button class="quizify-tool-button quizify-snippet-button" title="文字遮盖 (Ctrl+Alt+7)" aria-label="Quizify 题型：文字遮盖，快捷键 Ctrl+Alt+7"><i data-lucide="square-dashed" class="quizify-command-icon"></i><kbd class="quizify-shortcut">Ctrl+Alt+7</kbd></button>
+            <details class="quizify-inspector"><summary class="quizify-tool-button quizify-diagnostics-status" data-state="ok" title="语法通过" aria-label="语法检查：通过"><i data-lucide="circle-check" class="quizify-command-icon"></i></summary><div class="quizify-inspector-panel"><ul class="quizify-diagnostics-list"></ul><section class="quizify-preview"><div class="quizify-preview-header"><strong>结构预览</strong><span class="quizify-preview-meta"><span class="quizify-preview-field">Front</span><span class="quizify-preview-count">2 个结构</span></span></div><ol class="quizify-preview-list"><li data-kind="fitb"><span class="quizify-preview-kind">填空</span><strong>第 3 行</strong><span class="quizify-preview-detail">答案：面向连接</span></li><li data-kind="mask"><span class="quizify-preview-kind">文字遮盖</span><strong>第 5 行</strong><span class="quizify-preview-detail">遮盖文字：三次握手</span></li></ol></section></div></details>
             <details class="quizify-command-menu quizify-preview-menu"><summary class="quizify-tool-button quizify-command-summary" title="预览 Front 字段的交互渲染" aria-label="打开 Front 字段的交互渲染预览"><i data-lucide="scan-eye" class="quizify-command-icon"></i></summary><div class="quizify-live-preview-panel"></div></details>
           </div>
         </div>
@@ -106,12 +105,10 @@
 
 TCP 是一种 {{面向连接}} 的传输层协议。
 
-:::: recite mask=40 mode=mixed
-通过 %%三次握手%% 建立可靠连接。
-::::</div>
+TCP 通过 %%三次握手%% 建立连接，并提供可靠、有序的字节流服务。</div>
         <div class="preview-expanded">
           <div class="quizify-live-preview-panel">
-            <section class="quizify-rendered-preview"><header class="quizify-rendered-preview-header"><div><strong>交互渲染预览</strong><span>可试用题型、折叠、标签页、背诵和音频；预览操作不会保存答案</span></div><span class="quizify-rendered-preview-field">Front 字段</span></header><div class="quizify-rendered-preview-host"><div class="rendered-demo"><h1>TCP 协议</h1><p>TCP 是一种 <span class="fitb-demo">面向连接</span> 的传输层协议。</p><p>通过三次握手建立可靠连接。</p></div></div></section>
+            <section class="quizify-rendered-preview"><header class="quizify-rendered-preview-header"><div><strong>交互渲染预览</strong><span>可试用题型、折叠、标签页和文字遮盖；预览操作不会保存答案</span></div><span class="quizify-rendered-preview-field">Front 字段</span></header><div class="quizify-rendered-preview-host"><div class="rendered-demo"><h1>TCP 协议</h1><p>TCP 是一种 <span class="fitb-demo">面向连接</span> 的传输层协议。</p><p>通过三次握手建立可靠连接。</p></div></div></section>
           </div>
         </div>
       </div>

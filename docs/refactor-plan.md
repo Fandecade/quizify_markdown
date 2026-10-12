@@ -52,10 +52,9 @@ src/
     runtime/
       persistence.js
       fitb.js
-      recite.js
+      mask.js
       choices.js
       disclosure.js
-      audio.js
       annotations.js
       floating-control.js
   editor/
@@ -126,6 +125,7 @@ Done in this workspace:
 - Version 0.5 extends that system into authoring workflows: a scrollable card-based settings dialog with a fixed action footer and resource states; a branded editor workbench with refined command menus, diagnostics, previews, focus/scroll states, narrow-width validation, and a dedicated workbench preview.
 - Version 0.6 hardens the desktop integration boundary: nested config migration, script-safe JSON embedding, constrained offline asset paths and protocols, content-aware media synchronization, and pure-Python tests for paste normalization and upgrade behavior.
 - Recite masking now supports continuous reveal gestures: mouse and pen scrubbing starts after a movement threshold, while touch requires a 380ms stationary hold before dragging so normal mobile scrolling remains available. Scrub changes are persisted once at gesture completion.
+- Version 2.1 removes the image-occlusion, audio-player and recite-masking runtimes plus the coordinate tool, and replaces them with the inline `%%text%%` mask owned by `review/runtime/mask.js` (click or `Enter`/`Space` to toggle each block independently).
 
 Still to do:
 

@@ -1071,9 +1071,6 @@ function findMarkdownLinkContexts(source, referenceLabels = new Set()) {
     }
     if (text[index] !== "]" || !brackets.length) continue;
     const labelOpen = brackets.pop();
-    if (text.slice(Math.max(0, labelOpen - 6), labelOpen) === "!audio") {
-      continue;
-    }
     const image = labelOpen > 0 && text[labelOpen - 1] === "!" &&
       !escapedAt(text, labelOpen - 1);
     const ownerStart = image ? labelOpen - 1 : labelOpen;
@@ -1114,33 +1111,6 @@ function findMarkdownLinkContexts(source, referenceLabels = new Set()) {
   return contexts.sort(
     (left, right) => left.start - right.start || right.end - left.end
   );
-}
-
-function findQuizifyAudioRanges(source) {
-  const text = String(source ?? "");
-  const ranges = [];
-  let lineStart = 0;
-  while (lineStart <= text.length) {
-    let lineEnd = text.indexOf("\n", lineStart);
-    if (lineEnd < 0) lineEnd = text.length;
-    if (lineEnd > lineStart && text[lineEnd - 1] === "\r") lineEnd--;
-
-    let start = text.indexOf("!audio[", lineStart);
-    while (start >= 0 && start < lineEnd) {
-      const labelEnd = text.indexOf("](", start + 7);
-      // Keep this scanner equivalent to the extension's non-dotAll pattern,
-      // but never retry every later opener against the same failed suffix.
-      if (labelEnd < 0 || labelEnd >= lineEnd) break;
-      const end = text.indexOf(")", labelEnd + 2);
-      if (end < 0 || end >= lineEnd) break;
-      ranges.push({ start, end: end + 1 });
-      start = text.indexOf("!audio[", end + 1);
-    }
-
-    if (lineEnd === text.length) break;
-    lineStart = lineEnd + (text[lineEnd] === "\r" ? 2 : 1);
-  }
-  return ranges;
 }
 
 function resolveInlineOwnership(
@@ -1298,10 +1268,7 @@ function protectMathPipesInLine(text, marker, referenceLabels) {
   const htmlIndex = buildHtmlTagEndIndex(text);
   const ownership = resolveInlineOwnership(
     text,
-    [
-      ...findHtmlOpaqueRanges(text, htmlIndex),
-      ...findQuizifyAudioRanges(text)
-    ],
+    [...findHtmlOpaqueRanges(text, htmlIndex)],
     referenceLabels
   );
 

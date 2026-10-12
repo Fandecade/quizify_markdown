@@ -118,26 +118,19 @@ test("real Marked renders Quizify syntax and sanitizes dangerous HTML", () => {
   assert.doesNotMatch(html, /onerror|<script|javascript:|style=/i);
 });
 
-test("audio controls retain safe SVG icons after sanitization", () => {
+test("masked text keeps its markup and stays inert after sanitization", () => {
   const dom = runtime();
   const html = dom.window.Quizify.renderMarkdown(
-    "!audio[听力片段](sample.mp3)" +
+    "TCP 是一种 %%面向连接%% 的协议。" +
       "<svg onload='alert(1)'><script>alert(2)</script><path d='M0 0h1v1z'></path></svg>"
   );
   const fragment = JSDOM.fragment(html);
-  const player = fragment.querySelector(".audio-player");
-  assert(player);
-  assert.equal(player.querySelectorAll("svg.audio-icon").length, 4);
-  assert.equal(player.querySelectorAll("button[data-quizify-control]").length, 5);
-  assert(player.querySelector(".audio-icon-play path"));
-  assert(player.querySelector(".audio-icon-pause > *"));
-  assert(
-    Array.from(player.querySelectorAll("svg.audio-icon")).every(
-      (icon) =>
-        icon.getAttribute("viewBox") === "0 0 24 24" &&
-        icon.getAttribute("aria-hidden") === "true"
-    )
-  );
+  const mask = fragment.querySelector(".quizify-mask");
+  assert(mask);
+  assert.equal(mask.getAttribute("role"), "button");
+  assert.equal(mask.getAttribute("tabindex"), "0");
+  assert.equal(mask.getAttribute("aria-expanded"), "false");
+  assert.equal(mask.querySelector(".quizify-mask-text").textContent, "面向连接");
   assert.doesNotMatch(html, /onload|<script/i);
 });
 
@@ -145,7 +138,7 @@ test("interactive review extensions expose SVG icons and disclosure semantics", 
   const dom = runtime();
   const html = dom.window.Quizify.renderMarkdown(
     "> [!TIP]\n> Keep going.\n\n" +
-      ":::: recite mask=40\nRemember %%this%%.\n::::\n\n" +
+      "Remember %%this%% today.\n\n" +
       "[term]^(note)^ [[question||answer]] {{42}}\n\n" +
       ";;;\nA. One\nB. Two\n;;;AB\n"
   );
@@ -155,7 +148,7 @@ test("interactive review extensions expose SVG icons and disclosure semantics", 
   const tooltip = fragment.querySelector('.tooltip[role="tooltip"]');
 
   assert(fragment.querySelector(".markdown-alert-icon"));
-  assert(fragment.querySelector(".quizify-recite-shuffle-icon"));
+  assert(fragment.querySelector('.quizify-mask[role="button"] .quizify-mask-text'));
   assert(fragment.querySelector("button.feedback-icon .fitb-feedback-symbol"));
   assert(fragment.querySelector('.choice[data-quizify-kind="multiple"] .choice-check-icon'));
   assert.equal(annotation.querySelector("svg"), null);
@@ -164,7 +157,7 @@ test("interactive review extensions expose SVG icons and disclosure semantics", 
     Array.from(fragment.querySelectorAll("button[data-quizify-control]"), (button) =>
       button.dataset.quizifyControl
     ).sort(),
-    ["choice-feedback", "fitb-reveal", "recite-shuffle"]
+    ["choice-feedback", "fitb-reveal"]
   );
   assert.equal(annotation.getAttribute("tabindex"), "0");
   assert.equal(annotation.getAttribute("aria-expanded"), "false");
@@ -490,8 +483,8 @@ test("container terminators inside display math never close their container", ()
       selector: ".tabs-container .quizify-math"
     },
     {
-      source: [":::: recite", "$$", "x", "::::", "y", "$$", "::::"].join("\n"),
-      selector: ".quizify-recite .quizify-math"
+      source: ["::: Hide", "$$", "x", ":::", "y", "$$", ":::"].join("\n"),
+      selector: "details .quizify-math"
     },
     {
       source: ["::: Outer", "prefix $$x", ":::", "y$$", ":::"] .join("\n"),
@@ -502,8 +495,8 @@ test("container terminators inside display math never close their container", ()
       selector: ".tabs-container .quizify-math"
     },
     {
-      source: [":::: recite", "prefix $$x", "::::", "y$$", "::::"].join("\n"),
-      selector: ".quizify-recite .quizify-math"
+      source: ["::: Hide", "prefix $$x", ":::", "y$$", ":::"].join("\n"),
+      selector: "details .quizify-math"
     }
   ];
 
@@ -550,10 +543,6 @@ test("container terminators inside display math never close their container", ()
     {
       source: ["=== Tab", "$$", "==="].join("\n"),
       selector: ".tabs-container"
-    },
-    {
-      source: [":::: recite", "$$", "::::"].join("\n"),
-      selector: ".quizify-recite"
     },
     {
       source: [";;;", "A. Alpha", "B. Beta", "$$", ";;;A"].join("\n"),
@@ -1118,16 +1107,15 @@ test("malformed openers with distant HTML recover in one forward pass", () => {
   assert(elapsed < 2500, `malformed recovery took ${elapsed.toFixed(0)} ms`);
 });
 
-test("recite masking excludes both valid and failed KaTeX output", () => {
+test("inline masks stay inert inside both valid and failed KaTeX output", () => {
   const config = JSON.stringify({
     schema_version: 1,
     review: { cardless: false, floating_control: false },
     platform: { ankidroid_api: true }
   });
   const source = [
-    ":::: recite mask=100 mode=auto",
     "Remember $x^2$ and $x^$.",
-    "::::"
+    "Visible %%cover me%% text."
   ].join("\n");
   const dom = runtime(
     `<script type="application/json" id="quizify-config">${config}</script>` +
@@ -1141,11 +1129,12 @@ test("recite masking excludes both valid and failed KaTeX output", () => {
   assert(math[1].querySelector(".katex-error"));
   assert.equal(
     math.reduce(
-      (count, element) => count + element.querySelectorAll(".quizify-recite-token").length,
+      (count, element) => count + element.querySelectorAll(".quizify-mask").length,
       0
     ),
     0
   );
+  assert.equal(dom.window.document.querySelectorAll(".quizify-mask").length, 1);
 });
 
 test("Markdown tables fill a dedicated responsive scroll shell", () => {

@@ -515,8 +515,8 @@ test("unterminated opaque HTML prefixes are skipped once", () => {
   assert(elapsed < 1000, `opaque HTML scan took ${elapsed.toFixed(0)} ms`);
 });
 
-test("malformed link and audio floods remain linear during table protection", () => {
-  for (const chunk of ["[x](", "!audio["]) {
+test("malformed link and image floods remain linear during table protection", () => {
+  for (const chunk of ["[x](", "![x]("]) {
     const source = `|${chunk.repeat(12000)}`;
     const started = performance.now();
     const protectedMath = protectMathPipes(source);

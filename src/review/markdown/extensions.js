@@ -11,10 +11,6 @@ import {
   matchMathDelimiter
 } from "../../shared/math.js";
 import { createParserTools } from "./parsers.js";
-import {
-  formatOcclusionNumber,
-  sortOcclusionRegions
-} from "../../shared/occlusion.js";
 import { t } from "../../shared/i18n.js";
 import { iconSvg } from "../../shared/icons.js";
 
@@ -226,7 +222,7 @@ export function createMarkdownTools(state) {
   }
 
   function literalizeInteractiveLinkTokens(tokens = []) {
-    const interactive = new Set(["fitb", "reveal", "annotation"]);
+    const interactive = new Set(["fitb", "reveal", "annotation", "mask"]);
     return tokens.map((token) => {
       if (interactive.has(token.type)) {
         const literal = String(token.raw ?? token.text ?? "");
@@ -383,24 +379,17 @@ export function createMarkdownTools(state) {
   }
 
   const {
-    canArmReciteTouchScrub,
-    canReciteScrub,
     flattenChoiceTokens,
     flattenTabTokens,
     inlineTokens,
-    isReciteScrubMove,
     markerStart,
     nextName,
     parseChoiceBlock,
     parseChoiceOptions,
-    parseOcclusionBlock,
-    parseReciteBlock,
-    parseReciteOptions,
     parseTabsBlock,
     readLine,
     regexStart,
-    trimBlankEdges,
-    tokenizeReciteText
+    trimBlankEdges
   } = createParserTools(state);
 
   function createQuizifyExtensions() {
@@ -425,6 +414,7 @@ export function createMarkdownTools(state) {
         if (
           character === "$" ||
           character === "^" ||
+          (character === "%" && text[index + 1] === "%") ||
           (character === "{" && text[index + 1] === "{") ||
           (character === "=" && text[index + 1] === "=")
         ) {
@@ -433,11 +423,30 @@ export function createMarkdownTools(state) {
       }
     }
 
-    const audioIcons = {
-      replay: iconSvg("rotate-ccw", { className: "audio-icon" }),
-      play: iconSvg("play", { className: "audio-icon audio-icon-play" }),
-      pause: iconSvg("pause", { className: "audio-icon audio-icon-pause" }),
-      cancel: iconSvg("x", { className: "audio-icon" })
+    const textMask = {
+      name: "textMask",
+      level: "inline",
+      childTokens: ["tokens"],
+      tokenizer(src) {
+        const match = /^%%([^%\n]+)%%/.exec(src);
+        if (!match) return;
+        const text = match[1].trim();
+        if (!text) return;
+        return {
+          type: "textMask",
+          raw: match[0],
+          tokens: inlineTokens(this.lexer, text)
+        };
+      },
+      renderer(token) {
+        const label = escapeAttr(t("review.mask.reveal"));
+        return (
+          '<span class="quizify-mask" role="button" tabindex="0" aria-expanded="false" ' +
+          `aria-label="${label}" title="${label}">` +
+          `<span class="quizify-mask-text">${this.parser.parseInline(token.tokens)}</span>` +
+          "</span>"
+        );
+      }
     };
 
     const githubAlert = {
@@ -495,104 +504,6 @@ export function createMarkdownTools(state) {
           `<aside class="markdown-alert markdown-alert-${token.kind}">` +
           `<p class="markdown-alert-title">${iconSvg(alertIcon, { className: "markdown-alert-icon" })}${escapeHtml(token.label)}</p>` +
           `${this.parser.parse(token.tokens)}</aside>`
-        );
-      }
-    };
-
-    const imageOcclusion = {
-      name: "imageOcclusion",
-      level: "block",
-      childTokens: ["tokens"],
-      start(src) {
-        return regexStart(src, /^::::[ \t]+occlusion(?:[ \t]|$)/im);
-      },
-      tokenizer(src) {
-        const parsed = parseOcclusionBlock(src, this.lexer);
-        if (!parsed) return;
-        return { type: "imageOcclusion", ...parsed };
-      },
-      renderer(token) {
-        const caption = token.tokens?.length
-          ? `<figcaption class="quizify-occlusion-caption">${this.parser.parse(token.tokens)}</figcaption>`
-          : "";
-        const regions = sortOcclusionRegions(token.regions || []);
-        const shapes = regions
-          .map((region, index) => {
-            const label = (region.label || "").trim();
-            const mark = label
-              ? `<text class="quizify-occlusion-label" x="${formatOcclusionNumber(
-                  region.x + region.width / 2
-                )}" y="${formatOcclusionNumber(
-                  region.y + region.height / 2
-                )}" text-anchor="middle" dominant-baseline="central">${escapeHtml(
-                  label
-                )}</text>`
-              : "";
-            return (
-              `<g class="quizify-occlusion-region" role="button" tabindex="0" data-order="${escapeAttr(
-                region.order
-              )}" aria-label="${escapeAttr(
-                t("review.occlusion.region", {
-                  order: index + 1,
-                  label: label || region.order
-                })
-              )}">` +
-              `<rect class="quizify-occlusion-box" x="${formatOcclusionNumber(
-                region.x
-              )}" y="${formatOcclusionNumber(region.y)}" width="${formatOcclusionNumber(
-                region.width
-              )}" height="${formatOcclusionNumber(region.height)}" rx="0.6" ry="0.6"></rect>` +
-              `<g class="quizify-occlusion-content">${mark}</g>` +
-              "</g>"
-            );
-          })
-          .join("");
-        const image = token.url
-          ? `<img class="quizify-occlusion-image" src="${escapeAttr(
-              token.url
-            )}" alt="${escapeAttr(token.alt || "")}" draggable="false">`
-          : "";
-        const overlay = token.url
-          ? `<svg class="quizify-occlusion-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="false">${shapes}</svg>`
-          : "";
-        if (!token.url) {
-          return (
-            '<p class="quizify-occlusion-missing">' +
-            escapeHtml(t("review.occlusion.missing_image")) +
-            "</p>"
-          );
-        }
-        return (
-          `<figure class="quizify-occlusion" data-count="${regions.length}">` +
-          `<div class="quizify-occlusion-frame">${image}${overlay}</div>` +
-          caption +
-          "</figure>"
-        );
-      }
-    };
-
-    const recite = {
-      name: "recite",
-      level: "block",
-      childTokens: ["tokens"],
-      start(src) {
-        return regexStart(src, /^::::[ \t]+recite(?:[ \t]|$)/im);
-      },
-      tokenizer(src) {
-        const parsed = parseReciteBlock(src, this.lexer);
-        if (!parsed) return;
-        return { type: "recite", ...parsed };
-      },
-      renderer(token) {
-        return (
-          `<section class="quizify-recite" data-mask="${token.mask}" data-mode="${escapeAttr(token.mode)}" data-scrub-label="${escapeAttr(t("review.recite.scrub_hint"))}">` +
-          `<div class="quizify-recite-content">${this.parser.parse(token.tokens)}</div>` +
-          '<footer class="quizify-recite-toolbar">' +
-          `<label class="quizify-recite-slider"><span>${escapeHtml(t("review.recite.mask"))}</span>` +
-          `<input type="range" min="0" max="100" step="5" value="${token.mask}" aria-label="${escapeAttr(t("review.recite.mask_ratio"))}">` +
-          `<output>${token.mask}%</output></label>` +
-          `<button type="button" class="quizify-recite-shuffle" data-quizify-control="recite-shuffle" aria-label="${escapeAttr(t("review.recite.shuffle_label"))}">${iconSvg("shuffle", { className: "quizify-recite-shuffle-icon" })}<span>${escapeHtml(t("review.recite.shuffle"))}</span></button>` +
-          '</footer></section>'
         );
       }
     };
@@ -919,40 +830,6 @@ export function createMarkdownTools(state) {
       }
     };
 
-    const audio = {
-      name: "audio",
-      level: "block",
-      start(src) {
-        return markerStart(src, "!audio[");
-      },
-      tokenizer(src) {
-        const match = /^!audio\[(.*?)\]\((.*?)\)/.exec(src);
-        if (!match) return;
-        return {
-          type: "audio",
-          raw: match[0],
-          title: match[1].trim(),
-          url: match[2].trim()
-        };
-      },
-      renderer(token) {
-        return (
-          `<div class="audio-player" data-title="${escapeAttr(token.title)}" data-kind-label="${escapeAttr(t("review.audio.kind"))}">` +
-          `<audio preload="metadata"><source src="${escapeAttr(token.url)}" type="audio/mpeg"></audio>` +
-          '<div class="time-display"><span class="current-time">0:00</span><span class="duration">0:00</span></div>' +
-          `<div class="progress-container" role="slider" tabindex="0" aria-label="${escapeAttr(t("review.audio.progress"))}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-bar"></div></div>` +
-          '<div class="player-controls">' +
-          `<button type="button" class="replay-btn" data-quizify-control="audio-replay" title="${escapeAttr(t("review.audio.replay"))}" aria-label="${escapeAttr(t("review.audio.replay"))}">${audioIcons.replay}</button>` +
-          `<button type="button" class="play-btn" data-quizify-control="audio-toggle" title="${escapeAttr(t("review.audio.play"))}" aria-label="${escapeAttr(t("review.audio.play"))}">${audioIcons.play}${audioIcons.pause}</button>` +
-          `<button type="button" class="setA-btn" data-quizify-control="audio-loop-start" title="${escapeAttr(t("review.audio.set_a"))}" aria-label="${escapeAttr(t("review.audio.set_a"))}" aria-pressed="false"><span class="audio-letter">A</span></button>` +
-          `<button type="button" class="setB-btn" data-quizify-control="audio-loop-end" title="${escapeAttr(t("review.audio.set_b"))}" aria-label="${escapeAttr(t("review.audio.set_b"))}" aria-pressed="false"><span class="audio-letter">B</span></button>` +
-          `<button type="button" class="cancelLoop-btn" data-quizify-control="audio-loop-cancel" title="${escapeAttr(t("review.audio.cancel_loop"))}" aria-label="${escapeAttr(t("review.audio.cancel_loop"))}">${audioIcons.cancel}</button>` +
-          `<select class="speed-select" aria-label="${escapeAttr(t("review.audio.speed"))}"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>` +
-          "</div></div>"
-        );
-      }
-    };
-
     const mathSequences = Array.from(
       new Set(
         KATEX_DELIMITERS.flatMap((delimiter) => [delimiter.left, delimiter.right])
@@ -1140,18 +1017,16 @@ export function createMarkdownTools(state) {
 
     return [
       githubAlert,
-      imageOcclusion,
-      recite,
       collapse,
       tabs,
       annotation,
       highlight,
       fitb,
+      textMask,
       reveal,
       superscript,
       subscript,
       mcq,
-      audio,
       mathInline,
       mathBlock,
       rawIgnoredElement,
@@ -1161,19 +1036,12 @@ export function createMarkdownTools(state) {
   }
 
   return Object.freeze({
-    canArmReciteTouchScrub,
-    canReciteScrub,
     createQuizifyExtensions,
     createQuizifyRenderer,
     escapeHtml,
-    isReciteScrubMove,
     markerStart,
     parseChoiceBlock,
     parseChoiceOptions,
-    parseOcclusionBlock,
-    parseReciteBlock,
-    parseReciteOptions,
-    parseTabsBlock,
-    tokenizeReciteText
+    parseTabsBlock
   });
 }

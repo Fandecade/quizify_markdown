@@ -1,3 +1,5 @@
+import hashlib
+import json
 from pathlib import Path
 import tempfile
 import types
@@ -7,6 +9,11 @@ from helpers import load_module
 
 
 notetype = load_module("notetype")
+runtime_media = load_module("runtime_media")
+RUNTIME_BYTES = b"v1"
+RUNTIME_SHA = hashlib.sha256(RUNTIME_BYTES).hexdigest()
+#: The runtime is content addressed, so the template never names it verbatim.
+RUNTIME_NAME = runtime_media.hashed_name("_quizify.js", RUNTIME_SHA)
 
 
 class FakeModels:
@@ -72,6 +79,17 @@ class NoteTypeTest(unittest.TestCase):
         )
         (self.addon / "templates" / "first-paint.css").write_text(
             '[data-quizify-first-paint="pending"] { visibility: hidden; }',
+            encoding="utf-8",
+        )
+        (self.addon / "media-manifest.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "files": {
+                        "_quizify.js": {"bytes": len(RUNTIME_BYTES), "sha256": RUNTIME_SHA}
+                    },
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -176,12 +194,16 @@ class NoteTypeTest(unittest.TestCase):
         config_index = rendered.index('id="quizify-config"')
         bootstrap_index = rendered.index("data-quizify-first-paint-bootstrap")
         critical_style_index = rendered.index("data-quizify-first-paint-style")
-        runtime_index = rendered.index("_quizify.js")
+        runtime_index = rendered.index(RUNTIME_NAME)
         self.assertLess(config_index, bootstrap_index)
         self.assertLess(bootstrap_index, critical_style_index)
         self.assertLess(critical_style_index, runtime_index)
         self.assertIn("__quizifyFirstPaint", rendered)
         self.assertIn('visibility: hidden', rendered)
+        # The template must point at the content-addressed runtime, otherwise
+        # phones keep loading the copy they already have.
+        self.assertIn(f'<script src="./{RUNTIME_NAME}"></script>', rendered)
+        self.assertNotIn('"./_quizify.js"', rendered)
 
     def test_managed_css_paints_android_night_canvas_before_boot(self):
         self.assertIn("min-height: 100vh", notetype.MANAGED_CSS_BLOCK)

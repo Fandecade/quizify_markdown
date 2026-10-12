@@ -56,7 +56,7 @@ NOTE_TYPE_NAME = "Quizify Markdown"
 SAMPLE_DECK_NAME = "Quizify Markdown"
 DECK_DESCRIPTION = (
     "Quizify Markdown 示例牌组：逐张演示 Markdown、填空、单选、多选、代码高亮、"
-    "KaTeX 公式、点击揭示、批注、折叠块、标签页、随机遮罩背诵、高亮、图片、音频、"
+    "KaTeX 公式、点击揭示、批注、折叠块、标签页、文字遮盖、高亮、图片、"
     "提示框与伸缩大纲等用法。可直接在此笔记类型下新建卡片。"
 )
 
@@ -82,7 +82,9 @@ def load_addon_modules() -> types.SimpleNamespace:
         spec.loader.exec_module(module)
         return module
 
-    return types.SimpleNamespace(notetype=load("notetype"))
+    return types.SimpleNamespace(
+        notetype=load("notetype"), runtime_media=load("runtime_media")
+    )
 
 
 def default_config() -> dict:
@@ -99,7 +101,7 @@ def media_manifest() -> list[Path]:
 
 
 def extra_assets() -> list[Path]:
-    """Sample-only media (image, audio) shipped alongside the demo notes."""
+    """Sample-only media (images) shipped alongside the demo notes."""
     if not EXTRA_ASSETS_DIR.is_dir():
         return []
     return sorted(
@@ -109,8 +111,18 @@ def extra_assets() -> list[Path]:
     )
 
 
-def package_assets() -> list[Path]:
-    return media_manifest() + extra_assets()
+def package_assets(runtime_media) -> list[tuple[Path, str]]:
+    """Pair every bundled asset with the name it must carry in the package.
+
+    The review runtime is content addressed, because a ``.apkg`` import never
+    replaces an existing media file: shipping ``_quizify.js`` again would leave
+    phones and tablets on the runtime they already have.
+    """
+
+    names = runtime_media.load_media_names(ADDON_ROOT)
+    assets = [(path, names.get(path.name, path.name)) for path in media_manifest()]
+    assets += [(path, path.name) for path in extra_assets()]
+    return assets
 
 
 # ---------------------------------------------------------------------------
@@ -317,17 +329,38 @@ UDP 更轻量，但不保证可靠。
 ```""",
     ),
     (
-        r"""# 随机遮罩背诵
+        r"""# 文字遮盖
 
-用 `:::: recite ... ::::` 包裹，`%%...%%` 标记必须遮住的词。
+用 `%%文字%%` 把答案盖住，点一下才显示。
 
-:::: recite mask=50 mode=mixed
-TCP 是一种 %%面向连接%%、可靠的 %%传输层协议%%。
-::::""",
-        r"""- `mask=50`：初始遮挡约 50% 的候选单元
-- `mode=mixed`：自动识别中英文与数字
-- 点遮罩可揭示/重新遮挡，长按可临时偷看
-- 底部滑块调整比例，“洗牌”重新随机选择""",
+TCP 是一种 %%面向连接%%、可靠的 %%传输层协议%%，用 %%三次握手%% 建立连接。
+""",
+        r"""- 点一下遮盖块揭示，再点一下重新盖上
+- 同一张卡里的多个遮盖块互不影响
+- 遮盖块是绿色高亮，浅色 / 深色主题下都清晰
+
+```
+%%要遮盖的文字%%
+```
+
+> 遮盖只是“盖住”，文字仍留在卡片里，方便对照。""",
+    ),
+    (
+        r"""# 文字遮盖：自测
+
+先在心里回答，再逐个点开遮盖对照。
+
+- TCP 三次握手第一步：%%SYN%%
+- 第二步：%%SYN + ACK%%
+- 第三步：%%ACK%%
+""",
+        r"""- 按顺序逐块揭示，先回忆再验证
+- 键盘可用：Tab 聚焦遮盖块，Enter 或空格切换
+- Back 里也能用遮盖自测，例如 %%传输层%% 的代表协议是 TCP 和 UDP
+
+```
+%%按需遮盖任何文字%%
+```""",
     ),
     (
         r"""# 高亮与上下标
@@ -352,93 +385,6 @@ TCP 是一种 %%面向连接%%、可靠的 %%传输层协议%%。
 ```
 
 > 手机端图片必须已经在 Anki 媒体库中（本包已内置一张示例图片）。""",
-    ),
-    (
-        r"""# 图片遮挡
-
-用 `:::: occlusion` 把图片上的指定区域遮住，点击才揭示；坐标是相对图片的百分比。
-
-:::: occlusion url="_quizify-occlusion-sample.png" alt="网络协议栈"
-1. 12.5,22,75,20 应用层
-2. 12.5,48,75,20 传输层
-3. 12.5,74,75,20 网络层
-::::
-""",
-        r"""每一行区域写作 `序号. x,y,w,h [标签]`，x/y/w/h 都是相对图片宽高的百分比：
-
-```
-:::: occlusion url="文件名.png" alt="说明"
-1. 12.5,22,75,20 应用层
-2. 12.5,48,75,20 传输层
-::::
-```
-
-- 点某个区域即揭示，再点一次重新遮挡
-- 右下角悬浮控制可“揭示下一项 / 揭示全部”，按序号依次揭示
-- 标签可省略；省略后只显示遮挡色块
-
-> 想省事就用桌面端 `工具 → Quizify Markdown → 图片遮挡：生成坐标…` 或打开
-> `docs/image-occlusion-tool.html`，拖框后直接复制这段文本。""",
-    ),
-    (
-        r"""# 图片遮挡：顺序揭示
-
-遮罩会按区域编号依次揭示，适合“一层一层展开”的讲解。
-
-:::: occlusion url="_quizify-occlusion-sample.png" alt="协议栈顺序揭示"
-1. 12.5,22,75,20 TCP / UDP
-2. 12.5,48,75,20 IP / ICMP
-::::
-""",
-        r"""区域按行首编号排序，编号小的先揭示。
-
-- 点右下角悬浮控制里的“揭示下一项”逐个展开
-- “揭示全部”一次显示所有遮罩
-- 编号不必连续，但会被自动排序；相同编号保持书写先后
-
-```
-:::: occlusion url="文件名.png"
-1. 12.5,22,75,20 第一层
-2. 12.5,48,75,20 第二层
-::::
-```""",
-    ),
-    (
-        r"""# 图片遮挡：块内图片
-
-把 Markdown 图片放进块里，就无需再写 `url=` 参数：
-
-:::: occlusion
-![网络协议栈](_quizify-occlusion-sample.png)
-1. 12.5,22,75,20 应用层
-2. 12.5,48,75,20 传输层
-3. 12.5,74,75,20 网络层
-::::
-""",
-        r"""块内的第一张图片会作为遮挡底图，其余内容变成图注：
-
-```
-:::: occlusion
-![](文件名.png)
-1. 12.5,22,75,20 应用层
-::::
-```
-
-> `url=` 与块内图片二选一即可；同时存在时以 `url=` 为准。""",
-    ),
-    (
-        r"""# 音频播放器
-
-用 `!audio[标题](文件名.mp3)` 插入播放器：
-
-!audio[示例音频](_quizify-sample.mp3)""",
-        r"""播放器支持变速、循环 A/B 段与拖动进度。
-
-```
-!audio[标题](文件名.mp3)
-```
-
-> 音频文件要先放进 Anki 媒体库（本包已内置一段示例音频）。""",
     ),
     (
         r"""# 提示框
@@ -499,7 +445,12 @@ C. 网络层
 
 
 def build_collection(
-    col, notetype, addon_dir: Path, config: dict, with_samples: bool
+    col,
+    notetype,
+    addon_dir: Path,
+    config: dict,
+    with_samples: bool,
+    assets: list[tuple[Path, str]],
 ) -> None:
     models = col.models
     model = models.new(NOTE_TYPE_NAME)
@@ -513,7 +464,7 @@ def build_collection(
     effective = {**config, "note_type": NOTE_TYPE_NAME}
     template["qfmt"] = notetype.template_html(addon_dir, "front.html", effective)
     template["afmt"] = notetype.template_html(addon_dir, "back.html", effective)
-    model["css"] = notetype.DEFAULT_CSS + "\n" + scan_block(package_assets())
+    model["css"] = notetype.DEFAULT_CSS + "\n" + scan_block(assets)
     models.add(model)
 
     if not with_samples:
@@ -539,21 +490,21 @@ def build_collection(
 MOBILE_ASSETS_COMMENT = "quizify-mobile-assets:v1"
 
 
-def scan_block(assets: list[Path]) -> str:
+def scan_block(assets: list[tuple[Path, str]]) -> str:
     """A CSS comment listing every bundled asset.
 
     Anki's media scanner looks at the note type styling for files whose names
     start with ``_``; listing each filename here (with ``_quizify-``/``_``
     prefixes) makes the exporters keep the complete runtime and sample set.
     """
-    lines = "\n".join(path.name for path in assets)
+    lines = "\n".join(name for _, name in assets)
     return f"/* {MOBILE_ASSETS_COMMENT}\n{lines}\n*/"
 
 
-def verify_package_media(apkg_path: Path, assets: list[Path]) -> None:
+def verify_package_media(apkg_path: Path, assets: list[tuple[Path, str]]) -> None:
     with zipfile.ZipFile(apkg_path) as archive:
         packed = set(json.loads(archive.read("media")).values())
-    expected = {path.name for path in assets}
+    expected = {name for _, name in assets}
     missing = sorted(expected - packed)
     if missing:
         raise RuntimeError(
@@ -584,7 +535,7 @@ def main(argv: list[str] | None = None) -> int:
 
     addon = load_addon_modules()
     config = default_config()
-    assets = package_assets()
+    assets = package_assets(addon.runtime_media)
 
     output = args.out.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -599,11 +550,12 @@ def main(argv: list[str] | None = None) -> int:
                 ADDON_ROOT,
                 config,
                 with_samples=not args.no_samples,
+                assets=assets,
             )
             # Seed the collection media, then export with the legacy exporter,
             # which collects every asset listed in the note type styling.
-            for path in assets:
-                col.media.add_file(str(path))
+            for source, name in assets:
+                addon.runtime_media.write_media_file(col.media, source, name)
             exporter = AnkiPackageExporter(col)
             exporter.includeSched = False
             exporter.includeMedia = True

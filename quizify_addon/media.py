@@ -6,9 +6,7 @@ from pathlib import Path
 
 from .core import files_identical
 from .i18n import tr
-
-
-MANIFEST_NAME = "media-manifest.json"
+from .runtime_media import MANIFEST_NAME, load_media_names, write_media_file
 
 
 def load_media_manifest(addon_dir: Path) -> dict:
@@ -43,18 +41,32 @@ def media_status(addon_dir: Path) -> tuple[int, int, list[str]]:
 
 
 def sync_media(mw, addon_dir: Path) -> list[str]:
+    """Copy the runtime into ``collection.media`` under its content name.
+
+    Anki will not replace an existing media file, so each release lands under
+    a name derived from its own checksum instead of overwriting the previous
+    one.  Returns the file names written into the media folder.
+    """
+
     manifest = load_media_manifest(addon_dir)
-    media_dir = Path(mw.col.media.dir())
-    changed = []
+    names = load_media_names(addon_dir)
+    media = mw.col.media
+    media_dir = Path(media.dir())
+
+    changed: list[tuple[Path, str]] = []
     for name, expected in manifest["files"].items():
         source = addon_dir / name
         verify_media_file(source, expected)
-        if not files_identical(source, media_dir / name):
-            changed.append(source)
+        if not files_identical(source, media_dir / names[name]):
+            changed.append((source, names[name]))
+    if not changed:
+        return []
 
-    existing = [source.name for source in changed if (media_dir / source.name).is_file()]
+    existing = [name for _, name in changed if (media_dir / name).is_file()]
     if existing:
-        mw.col.media.trash_files(existing)
-    for source in changed:
-        mw.col.media.add_file(str(source))
-    return [source.name for source in changed]
+        media.trash_files(existing)
+
+    written = []
+    for source, name in changed:
+        written.append(write_media_file(media, source, name))
+    return written

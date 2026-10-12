@@ -34,7 +34,7 @@ test("runtime translations switch synchronously and interpolate named values", (
   setLocale("ru_RU");
   assert.equal(getLocale(), "ru");
   assert.equal(t("common.cancel"), "Отмена");
-  assert.match(t("review.audio.point", { label: "A", time: "0:42" }), /A.*0:42/);
+  assert.match(t("editor.preview_meta.mask", { text: "скрытый" }), /скрытый/);
   setLocale("unknown");
   assert.equal(t("common.cancel"), "Cancel");
 });

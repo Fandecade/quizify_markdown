@@ -6,8 +6,7 @@ import { createMarkdownTools } from "./markdown/extensions.js";
 import { createReviewStorage } from "./runtime/persistence.js";
 import { initAnnotations } from "./runtime/annotations.js";
 import { initFitb } from "./runtime/fitb.js";
-import { initRecite } from "./runtime/recite.js";
-import { initOcclusion } from "./runtime/occlusion.js";
+import { initTextMasks } from "./runtime/mask.js";
 import { initChoices } from "./runtime/choices.js";
 import {
   activateTabPane,
@@ -16,7 +15,6 @@ import {
   initTabs,
   prepareRevealContext
 } from "./runtime/disclosure.js";
-import { initAudio } from "./runtime/audio.js";
 import { createFloatingControlRuntime } from "./runtime/floating-control.js";
 import {
   decodeAnkiFieldHtml,
@@ -57,30 +55,21 @@ import { t } from "../shared/i18n.js";
     root.console?.warn?.("Quizify cleanup failed", error);
   });
   const {
-    canArmReciteTouchScrub,
-    canReciteScrub,
     createQuizifyExtensions,
     createQuizifyRenderer,
     escapeHtml,
-    isReciteScrubMove,
     markerStart,
     parseChoiceBlock,
     parseChoiceOptions,
-    parseReciteBlock,
-    parseReciteOptions,
-    parseTabsBlock,
-    tokenizeReciteText
+    parseTabsBlock
   } = createMarkdownTools(state);
   const {
-    clearReciteState,
     clearRevealProgress,
     clearUserAnswers,
     loadFloatingPosition,
-    loadReciteState,
     loadRevealProgress,
     loadUserAnswers,
     saveFloatingPosition,
-    saveReciteState,
     saveRevealProgress,
     saveUserAnswers
   } = createReviewStorage(root);
@@ -419,7 +408,6 @@ import { t } from "../shared/i18n.js";
     if (!root.isBack) {
       clearUserAnswers();
       clearRevealProgress();
-      clearReciteState();
     }
 
     state.revealControllers = state.revealControllers.filter(
@@ -433,29 +421,13 @@ import { t } from "../shared/i18n.js";
       saveUserAnswers,
       registerRevealController
     });
-    initOcclusion({
-      root,
-      registerRevealController,
-      lifecycle: runtimeLifecycle
-    });
-    initRecite({
-      root,
-      loadReciteState,
-      saveReciteState,
-      tokenizeReciteText,
-      canReciteScrub,
-      canArmReciteTouchScrub,
-      isReciteScrubMove,
-      registerRevealController,
-      lifecycle: runtimeLifecycle
-    });
     initTabs({ root, lifecycle: runtimeLifecycle });
+    initTextMasks({ root });
     initCollapses({
       root,
       lifecycle: runtimeLifecycle,
       registerRevealController
     });
-    initAudio({ root, lifecycle: runtimeLifecycle });
     initAnnotations({
       root,
       lifecycle: runtimeLifecycle,
@@ -502,12 +474,6 @@ import { t } from "../shared/i18n.js";
       parseChoiceOptions,
       parseChoiceBlock,
       parseTabsBlock,
-      parseReciteBlock,
-      parseReciteOptions,
-      tokenizeReciteText,
-      canReciteScrub,
-      canArmReciteTouchScrub,
-      isReciteScrubMove,
       activateTabPane,
       prepareRevealContext,
       directionFromDelta,

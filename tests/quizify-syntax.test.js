@@ -18,10 +18,7 @@ const valid = [
   "A. 选项 A",
   "B. 选项 B",
   ";;;A",
-  "!audio[片段](clip.mp3)",
-  ":::: recite mask=40 mode=mixed",
-  "背诵 %%整体短语%% 内容",
-  "::::"
+  "正文 %%整体短语%% 内容"
 ].join("\n");
 
 assert.deepEqual(syntax.analyzeQuizifySyntax(valid), []);
@@ -50,20 +47,13 @@ assert(preview.some((item) => item.kind === "fitb" && item.meta.answer === "答�
 assert(preview.some((item) => item.kind === "single" && item.meta.answers === "A"));
 assert(preview.some((item) => item.kind === "collapse" && item.meta.title === "折叠"));
 assert(preview.some((item) => item.kind === "tab" && item.meta.title === "A"));
-assert(preview.some((item) => item.kind === "audio" && item.meta.url === "clip.mp3"));
-assert(preview.some((item) => item.kind === "recite" && item.meta.mask === "40"));
+assert(preview.some((item) => item.kind === "mask" && item.meta.text === "整体短语"));
 
-const invalidRecite = syntax.analyzeQuizifySyntax([
-  ":::: recite mask=120 mode=random unknown=yes",
-  "未配对的 %%分组",
-  "::::"
+const unpairedMask = syntax.analyzeQuizifySyntax([
+  "正文 %%没有配对的遮盖",
+  "%%配对成功%% 的遮盖"
 ].join("\n"));
-assert(invalidRecite.some((item) => item.message.includes("0 到 100")));
-assert(invalidRecite.some((item) => item.message.includes("auto、manual 或 mixed")));
-assert(invalidRecite.some((item) => item.message.includes("未知背诵参数")));
-assert(invalidRecite.some((item) => item.message.includes("缺少配对")));
-
-const unclosedRecite = syntax.analyzeQuizifySyntax(":::: recite\n内容");
-assert(unclosedRecite.some((item) => item.message.includes("缺少结束标记 ::::")));
+assert(unpairedMask.some((item) => item.message.includes("没有配对")));
+assert(!unpairedMask.some((item) => item.line === 2));
 
 console.log("quizify syntax tests passed");

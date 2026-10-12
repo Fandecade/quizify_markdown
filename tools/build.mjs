@@ -138,40 +138,6 @@ await buildWithRetry({
   outfile: path.join(web, "editor.css")
 });
 
-// Image-occlusion coordinate builder. Its shared helpers are bundled as a
-// classic script (file:// pages cannot use ES module imports) and then inlined
-// into the page template, so the same standalone HTML ships both as
-// `docs/image-occlusion-tool.html` and as the addon's menu dialog.
-const occlusionHelper = await buildWithRetry({
-  ...common,
-  entryPoints: [path.join(root, "src/shared/occlusion-tool-api.js")],
-  write: false,
-  format: "iife",
-  minify: false,
-  banner: { js: "/* Generated from src/shared/occlusion.js - do not edit by hand. */" }
-});
-const occlusionTemplate = await readFile(
-  path.join(root, "src", "occlusion-tool", "page.html"),
-  "utf8"
-);
-if (!occlusionTemplate.includes("<!--__QUIZIFY_OCCLUSION_HELPER__-->")) {
-  throw new Error("occlusion tool template lost its helper placeholder");
-}
-const occlusionPage = occlusionTemplate.replace(
-  "<!--__QUIZIFY_OCCLUSION_HELPER__-->",
-  `<script>${occlusionHelper.outputFiles[0].text}</script>`
-);
-await writeFile(
-  path.join(root, "docs", "image-occlusion-tool.html"),
-  occlusionPage,
-  "utf8"
-);
-await writeFile(
-  path.join(web, "occlusion-tool.html"),
-  occlusionPage,
-  "utf8"
-);
-
 const mediaNames = (await readdir(addon)).filter((name) =>
   /^_quizify(?:-i18n\.js|-katex-.*\.(?:woff2?|ttf)|\.(?:js|css))$/.test(name)
 );

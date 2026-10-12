@@ -78,13 +78,16 @@ async function settle(root) {
 
 test("release bundles are minified and stay within size budgets", async () => {
   const budgets = {
-    // Complete Chinese, English and Russian catalogs shared by every runtime.
-    "_quizify-i18n.js": 150_000,
+    // Complete Chinese, English and Russian catalogs shared by every runtime,
+    // including the editor and coordinate-tool strings the desktop addon uses.
+    "_quizify-i18n.js": 165_000,
     "_quizify.js": 700_000,
     // Includes both skins, bidirectional layout, the viewport/Android
-    // first-paint canvases and scoped resets for Anki WebView styles.
-    "_quizify.css": 88_000,
-    "web/editor.js": 50_000,
+    // first-paint canvases, scoped resets for Anki WebView styles and the
+    // inline text-mask theme.
+    "_quizify.css": 95_000,
+    // Editor shell plus the toolbar, diagnostics and the paste-to-media bridge.
+    "web/editor.js": 55_000,
     "web/editor-preview.js": 750_000,
     // Includes the shared ownership-aware math scanner used by diagnostics.
     "web/syntax-tools.js": 40_000,

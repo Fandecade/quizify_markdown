@@ -129,7 +129,7 @@ class ImportServiceTest(unittest.TestCase):
             root = Path(directory)
             source = root / "daily.md"
             (root / "image.png").write_bytes(b"png")
-            (root / "voice.mp3").write_bytes(b"mp3")
+            (root / "wave.png").write_bytes(b"png")
             col = FakeCollection()
 
             outcome = service.import_cards(
@@ -139,7 +139,7 @@ class ImportServiceTest(unittest.TestCase):
                     card(
                         source,
                         "See ![diagram](image.png)",
-                        "Hear !audio[word](voice.mp3)",
+                        "Listen to ![波形图](wave.png)",
                         tags=("card", "document"),
                     )
                 ],
@@ -156,10 +156,10 @@ class ImportServiceTest(unittest.TestCase):
         self.assertEqual(added.note.tags, ["card", "document", "batch"])
         self.assertIn("![diagram](anki-image.png)", added.note["Front"])
         self.assertIn('<img src="anki-image.png">', added.note["Front"])
-        self.assertIn("!audio[word](anki-voice.mp3)", added.note["Back"])
-        self.assertIn('<audio src="anki-voice.mp3"></audio>', added.note["Back"])
+        self.assertIn("![波形图](anki-wave.png)", added.note["Back"])
+        self.assertIn('<img src="anki-wave.png">', added.note["Back"])
         self.assertEqual(
-            outcome.copied_media, ("anki-image.png", "anki-voice.mp3")
+            outcome.copied_media, ("anki-image.png", "anki-wave.png")
         )
         self.assertEqual(col.merged, [7])
 

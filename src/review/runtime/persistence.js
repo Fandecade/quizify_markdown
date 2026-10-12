@@ -1,7 +1,6 @@
 const KEYS = Object.freeze({
   answers: "quizify:v1:answers",
   reveal: "quizify:v1:reveal-progress",
-  recite: "quizify:v1:recite-state",
   floatingPosition: "quizify:v1:floating-position"
 });
 
@@ -44,19 +43,6 @@ export function createReviewStorage(target = globalThis) {
     persistence()?.removeItem(KEYS.reveal);
   }
 
-  function loadReciteState() {
-    const saved = persistence()?.getItem(KEYS.recite);
-    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
-  }
-
-  function saveReciteState(value) {
-    persistence()?.setItem(KEYS.recite, value);
-  }
-
-  function clearReciteState() {
-    persistence()?.removeItem(KEYS.recite);
-  }
-
   function loadFloatingPosition() {
     try {
       const saved = JSON.parse(target.localStorage?.getItem(KEYS.floatingPosition));
@@ -85,15 +71,12 @@ export function createReviewStorage(target = globalThis) {
   }
 
   return Object.freeze({
-    clearReciteState,
     clearRevealProgress,
     clearUserAnswers,
     loadFloatingPosition,
-    loadReciteState,
     loadRevealProgress,
     loadUserAnswers,
     saveFloatingPosition,
-    saveReciteState,
     saveRevealProgress,
     saveUserAnswers
   });

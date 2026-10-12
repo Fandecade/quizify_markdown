@@ -27,7 +27,11 @@ def load_builder():
 
 
 builder = load_builder()
+runtime_media = builder.load_addon_modules().runtime_media
 HAS_ANKI = importlib.util.find_spec("anki") is not None
+#: The card runtime is content addressed so that a ``.apkg`` import or an
+#: AnkiWeb media sync on a phone always receives the current build.
+RUNTIME_NAME = runtime_media.load_media_names(builder.ADDON_ROOT)["_quizify.js"]
 
 
 class ApkgBuilderTest(unittest.TestCase):
@@ -59,15 +63,12 @@ class ApkgBuilderTest(unittest.TestCase):
         self.assertGreaterEqual(len(builder.SAMPLES), 5)
         for marker in (";;;", "{{", "$$", "```", ":::", "===", "[[", "> "):
             self.assertIn(marker, combined, marker)
-        self.assertIn(":::: recite", combined)
-        self.assertIn(":::: occlusion", combined)
-        self.assertIn("_quizify-occlusion-sample.png", combined)
+        self.assertIn("%%面向连接%%", combined)
+        self.assertIn("_quizify-sample.png", combined)
 
     def test_sample_deck_ships_the_media_every_card_references(self):
         shipped = {path.name for path in builder.extra_assets()}
-        self.assertIn("_quizify-occlusion-sample.png", shipped)
         self.assertIn("_quizify-sample.png", shipped)
-        self.assertIn("_quizify-sample.mp3", shipped)
 
         # Every media filename mentioned by a sample card must be packaged.
         combined = "\n".join(front + back for front, back in builder.SAMPLES)
@@ -75,51 +76,39 @@ class ApkgBuilderTest(unittest.TestCase):
         self.assertTrue(referenced, "sample cards should reference bundled media")
         self.assertEqual(referenced - shipped, set())
 
-    def test_occlusion_sample_regions_stay_inside_the_image(self):
-        combined = "\n".join(front for front, _ in builder.SAMPLES)
-        blocks = re.findall(r"::::[ \t]+occlusion[^\n]*\n(.*?)\n::::", combined, re.S)
-        self.assertTrue(blocks, "the sample deck should include occlusion blocks")
-        region_line = re.compile(
-            r"^\s*(\d+)\.\s*(-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)\s*(.*)$"
+    def test_runtime_assets_are_named_after_their_content(self):
+        assets = builder.package_assets(runtime_media)
+        names = {name for _, name in assets}
+        manifest = json.loads(
+            (builder.ADDON_ROOT / "media-manifest.json").read_text(encoding="utf-8")
         )
-        checked = 0
-        for block in blocks:
-            for line in block.splitlines():
-                if not line.strip():
-                    continue
-                match = region_line.match(line)
-                # A block may also carry an image or a caption; only lines that
-                # look like `<number>. x,y,w,h` are treated as regions.
-                if not re.match(r"^\s*\d+\s*\.", line):
-                    continue
-                self.assertIsNotNone(match, f"not a valid region line: {line!r}")
-                _, x, y, w, h, _label = match.groups()
-                x, y, w, h = (float(value) for value in (x, y, w, h))
-                self.assertGreater(w, 0)
-                self.assertGreater(h, 0)
-                self.assertLessEqual(x + w, 100.0001)
-                self.assertLessEqual(y + h, 100.0001)
-                checked += 1
-        self.assertGreaterEqual(checked, 5)
+        for source in runtime_media.RUNTIME_FILES:
+            digest = manifest["files"][source]["sha256"]
+            self.assertIn(runtime_media.hashed_name(source, digest), names)
+        # Without a content name a phone would keep loading the build it has.
+        self.assertNotIn("_quizify.js", names)
+        self.assertNotIn("_quizify.css", names)
+        # Fonts are already content addressed by the bundler.
+        self.assertTrue(any("katex" in name for name in names))
 
     def test_scan_block_lists_every_asset_for_the_media_scanner(self):
-        assets = builder.package_assets()
+        assets = builder.package_assets(runtime_media)
         block = builder.scan_block(assets)
         self.assertIn(builder.MOBILE_ASSETS_COMMENT, block)
         # Anki only scans styling for "_"-prefixed media, so every asset that
         # must travel with the mobile package has to be listed.
-        for path in assets:
-            self.assertIn(path.name, block)
-            self.assertTrue(path.name.startswith("_"), path.name)
+        for _, name in assets:
+            self.assertIn(name, block)
+            self.assertTrue(name.startswith("_"), name)
 
     def test_verify_package_media_rejects_incomplete_archives(self):
-        assets = builder.media_manifest()
+        assets = builder.package_assets(runtime_media)
         with tempfile.TemporaryDirectory() as tmp:
             apkg = Path(tmp) / "quizify.apkg"
             with ZipFile(apkg, "w", ZIP_DEFLATED) as archive:
                 archive.writestr("meta", b"\x08\x02")
                 archive.writestr(
-                    "media", json.dumps({p.name: p.name for p in assets})
+                    "media", json.dumps({name: name for _, name in assets})
                 )
             builder.verify_package_media(apkg, assets)  # complete, no raise
 
@@ -156,20 +145,28 @@ class ApkgBuildTest(unittest.TestCase):
                     [field["name"] for field in model["flds"]], ["Front", "Back"]
                 )
                 qfmt = model["tmpls"][0]["qfmt"]
-                self.assertIn("_quizify.js", qfmt)
+                # Content-addressed: a phone that already holds the previous
+                # runtime still has to fetch this exact file.
+                self.assertIn(RUNTIME_NAME, qfmt)
+                self.assertNotIn('"./_quizify.js"', qfmt)
                 self.assertIn("quizify-managed-template", qfmt)
                 self.assertIn("data-quizify-first-paint", qfmt)
                 self.assertIn("quizify-managed-css", model["css"])
                 self.assertIn(builder.MOBILE_ASSETS_COMMENT, model["css"])
 
                 media = set(os.listdir(col.media.dir()))
-                self.assertIn("_quizify.js", media)
-                self.assertIn("_quizify.css", media)
+                names = runtime_media.load_media_names(builder.ADDON_ROOT)
+                self.assertIn(names["_quizify.js"], media)
+                self.assertIn(names["_quizify.css"], media)
+                self.assertIn(names["_quizify-i18n.js"], media)
+                self.assertIn(names["_persistence.js"], media)
                 self.assertTrue(any("katex" in name for name in media))
-                self.assertIn("_quizify-occlusion-sample.png", media)
+                self.assertIn("_quizify-sample.png", media)
                 notes = col.db.all("select flds from notes")
                 joined = "\n".join(row[0] for row in notes)
-                self.assertIn(":::: occlusion", joined)
+                self.assertIn("%%面向连接%%", joined)
+                self.assertNotIn(":::: occlusion", joined)
+                self.assertNotIn("!audio[", joined)
                 self.assertEqual(
                     col.db.scalar("select count(*) from notes"), len(builder.SAMPLES)
                 )

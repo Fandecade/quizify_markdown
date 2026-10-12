@@ -238,7 +238,7 @@ function createEditor(initialValue) {
 }
 
 const frontEditor = createEditor("Front {{answer}}");
-const backEditor = createEditor("!audio[clip](sound.mp3)");
+const backEditor = createEditor("Back %%clip%% 遮盖");
 frontField.codeMirrorNode.CodeMirror = frontEditor;
 backField.codeMirrorNode.CodeMirror = backEditor;
 
@@ -406,7 +406,7 @@ context.quizifyEditorActivate().then(async () => {
 
   const preview = document.querySelector(".quizify-preview-list");
   assert(preview.children.some((child) => child.dataset.kind === "fitb"));
-  assert(!preview.children.some((child) => child.dataset.kind === "audio"));
+  assert(!preview.children.some((child) => child.dataset.kind === "mask"));
 
   frontEditor.value = Array.from({ length: 26 }, (_, index) => `{{答案${index + 1}}}`).join("\n");
   frontEditor.focus();
@@ -419,7 +419,7 @@ context.quizifyEditorActivate().then(async () => {
   backEditor.emit("focus");
   assert.match(toolbar["aria-label"], /Back/);
   assert.match(findByClass(toolbar, "quizify-command-summary")["aria-label"], /Back/);
-  assert(preview.children.some((child) => child.dataset.kind === "audio"));
+  assert(preview.children.some((child) => child.dataset.kind === "mask"));
   assert(!preview.children.some((child) => child.dataset.kind === "fitb"));
 
   let shortcutPrevented = false;

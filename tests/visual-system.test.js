@@ -296,8 +296,7 @@ for (const selector of [
   ".quizify-outline-branch::before", ".quizify-outline-breadcrumbs",
   ".collapsed-with-children", "--tree-line", "background: var(--tree-line)",
   "--outline-bullet-axis", "--outline-child-control-gap",
-  ".quizify-recite", ".audio-player", ".player-controls button.play-btn",
-  ".player-controls .setA-btn.active", ".progress-container:focus-visible", ".quizify-floating-control",
+  ".quizify-mask", ".quizify-mask.revealed", ".quizify-floating-control",
   "@media (max-width: 640px)", "@media (prefers-reduced-motion: reduce)"
 ]) {
   assert(css.includes(selector), `missing visual selector: ${selector}`);
@@ -328,7 +327,7 @@ for (const component of [
   "Markdown 排版", "markdown-alert-note", "tabs-container", 'class="fitb"',
   "Workflowy 风格大纲",
   'class="choice"', 'class="annotation"', 'class="reveal"',
-  'class="quizify-recite"', 'class="audio-player"'
+  'class="quizify-mask"'
 ]) {
   assert(preview.includes(component), `visual preview missing component: ${component}`);
 }

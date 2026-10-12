@@ -41,8 +41,7 @@ const lexer = {
 
 const samples = {
   githubAlert: "> [!WARNING]\n> Watch out.\n",
-  recite: ":::: recite mask=40\nRemember this.\n::::\n",
-  imageOcclusion: ":::: occlusion url=\"map.png\"\n1. 10,10,30,20 Label\n::::\n",
+  textMask: "%%remember this%%",
   collapse: "::: Details\nBody\n:::\n",
   tabs: "=== One\nFirst\n=== Two\nSecond\n===\n",
   annotation: "[term]^(note)^",
@@ -52,7 +51,6 @@ const samples = {
   superscript: "^2^",
   subscript: "~2~",
   mcq: ";;;\nA. Alpha\nB. Beta\n;;;A\n",
-  audio: "!audio[clip](sound.mp3)",
   mathInline: "\\(x + y\\)",
   mathBlock: "\\[x + y\\]",
   rawIgnoredElement: "<code>$x$</code>",

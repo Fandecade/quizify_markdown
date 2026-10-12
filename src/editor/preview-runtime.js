@@ -1,6 +1,5 @@
 import { createLifecycle } from "../review/lifecycle.js";
 import { initAnnotations } from "../review/runtime/annotations.js";
-import { initAudio } from "../review/runtime/audio.js";
 import { initChoices } from "../review/runtime/choices.js";
 import {
   initCollapses,
@@ -8,7 +7,7 @@ import {
   initTabs
 } from "../review/runtime/disclosure.js";
 import { initFitb } from "../review/runtime/fitb.js";
-import { initRecite } from "../review/runtime/recite.js";
+import { initTextMasks } from "../review/runtime/mask.js";
 
 const activePreviews = new WeakMap();
 
@@ -86,19 +85,6 @@ function previewRoot(scope, isBack) {
   return root;
 }
 
-function parserTools() {
-  const tools = globalThis.myquizify?._internal || {};
-  return {
-    canArmReciteTouchScrub:
-      tools.canArmReciteTouchScrub || ((pointerType) => pointerType === "touch"),
-    canReciteScrub:
-      tools.canReciteScrub || ((pointerType, button) => pointerType !== "touch" && button === 0),
-    isReciteScrubMove:
-      tools.isReciteScrubMove || ((deltaX, deltaY) => Math.hypot(deltaX, deltaY) > 10),
-    tokenizeReciteText: tools.tokenizeReciteText || ((text) => [{ text, hideable: false }])
-  };
-}
-
 export function disposePreviewInteractions(scope) {
   const active = activePreviews.get(scope);
   if (!active) return;
@@ -114,7 +100,6 @@ export function initPreviewInteractions(scope, { isBack = false } = {}) {
   const root = previewRoot(scope, isBack);
   const lifecycle = createLifecycle();
   const userAnswers = { fitbs: {}, mcqs: {} };
-  const reciteState = {};
   const registerRevealController = () => {};
   const saveUserAnswers = () => {};
 
@@ -125,17 +110,9 @@ export function initPreviewInteractions(scope, { isBack = false } = {}) {
     saveUserAnswers,
     registerRevealController
   });
-  initRecite({
-    root,
-    loadReciteState: () => reciteState,
-    saveReciteState: () => {},
-    ...parserTools(),
-    registerRevealController,
-    lifecycle
-  });
   initTabs({ root, lifecycle });
+  initTextMasks({ root });
   initCollapses({ root, lifecycle, registerRevealController });
-  initAudio({ root, lifecycle });
   initAnnotations({ root, lifecycle, registerRevealController });
   initReveal({ root, lifecycle, registerRevealController });
   initChoices({

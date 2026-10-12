@@ -31,6 +31,7 @@ from .core import (
 from .media import sync_media as sync_media_files
 from .notetype import MANAGED_TEMPLATE_MARKER, ensure_notetype as ensure_model
 from .i18n import current_locale, tr
+from .runtime_media import load_media_names
 
 
 ADDON_DIR = Path(__file__).parent
@@ -49,11 +50,21 @@ def addon_metadata() -> dict:
 
 ADDON_VERSION = str(addon_metadata().get("version", "unknown"))
 
+# The card templates reference the runtime through content-addressed media
+# names, so the tags stripped from the desktop reviewer have to be derived from
+# the same manifest instead of being hard coded.
+MEDIA_NAMES = load_media_names(ADDON_DIR)
+
+
+def _media_tag(name: str, template: str) -> str:
+    return template.format(file=MEDIA_NAMES.get(name, name))
+
+
 REVIEW_ASSET_TAGS = (
-    '<link rel="stylesheet" href="./_quizify.css">',
-    '<script src="./_quizify-i18n.js"></script>',
-    '<script src="./_persistence.js"></script>',
-    '<script src="./_quizify.js"></script>',
+    _media_tag("_quizify.css", '<link rel="stylesheet" href="./{file}">'),
+    _media_tag("_quizify-i18n.js", '<script src="./{file}"></script>'),
+    _media_tag("_persistence.js", '<script src="./{file}"></script>'),
+    _media_tag("_quizify.js", '<script src="./{file}"></script>'),
 )
 REVIEW_STYLESHEET_ID = "quizify-review-styles"
 
@@ -273,11 +284,6 @@ def on_editor_load_note(editor: Editor) -> None:
 
 
 def on_js_message(handled, message: str, context):
-    from .occlusion_tool import handle_tool_message
-
-    handled, result = handle_tool_message(handled, message)
-    if handled:
-        return result
     return handle_reviewer_message(handled, message, context, mw)
 
 
@@ -291,9 +297,9 @@ def add_menu() -> None:
     import_action = QAction(tr("menu.import_markdown"), mw)
     import_action.triggered.connect(lambda _=False: show_markdown_import())
     submenu.addAction(import_action)
-    occlusion_action = QAction(tr("menu.occlusion_tool"), mw)
-    occlusion_action.triggered.connect(lambda _=False: show_occlusion_tool())
-    submenu.addAction(occlusion_action)
+    media_action = QAction(tr("menu.import_media"), mw)
+    media_action.triggered.connect(lambda _=False: import_media_files())
+    submenu.addAction(media_action)
     submenu.addSeparator()
     settings_action = QAction(tr("menu.settings"), mw)
     settings_action.triggered.connect(lambda _=False: show_settings())
@@ -313,10 +319,10 @@ def show_markdown_import() -> None:
     show_import_dialog()
 
 
-def show_occlusion_tool() -> None:
-    from .occlusion_tool import show_occlusion_tool as show
+def import_media_files() -> None:
+    from .media_import import import_media_files as run
 
-    show()
+    run()
 
 
 def _show_warning(message: str) -> None:

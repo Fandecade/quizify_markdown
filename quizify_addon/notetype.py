@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .configuration import config_script, note_type_name
+from .runtime_media import load_media_names, rewrite_references
 
 
 LEGACY_DEFAULT_CSS = (
@@ -30,7 +31,10 @@ LEGACY_TEMPLATE_MARKERS = ('id="quizify-config"', "_quizify.js")
 
 
 def template_html(addon_dir: Path, name: str, config: dict) -> str:
-    body = (addon_dir / "templates" / name).read_text(encoding="utf-8")
+    body = rewrite_references(
+        (addon_dir / "templates" / name).read_text(encoding="utf-8"),
+        load_media_names(addon_dir),
+    )
     first_paint_js = (addon_dir / "templates" / "first-paint.js").read_text(
         encoding="utf-8"
     )

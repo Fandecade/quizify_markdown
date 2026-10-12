@@ -93,36 +93,29 @@ assert.equal(alert.kind, "warning");
 assert.match(render(byName.githubAlert, alert), /markdown-alert-warning/);
 assert.match(render(byName.githubAlert, alert), /Watch out/);
 
-const audio = tokenize(byName.audio, "!audio[clip](sound.mp3)");
-assert.equal(audio.type, "audio");
-const audioHtml = render(byName.audio, audio);
-assert.match(audioHtml, /audio-player/);
-assert.match(audioHtml, /class="replay-btn"/);
-assert.match(audioHtml, /class="play-btn"/);
-assert.match(audioHtml, /audio-icon-play/);
-assert.match(audioHtml, /audio-icon-pause/);
-assert.match(audioHtml, /class="setA-btn"/);
-assert.match(audioHtml, /class="setB-btn"/);
-assert.match(audioHtml, /class="cancelLoop-btn"/);
-assert.match(audioHtml, /role="slider"/);
-assert.match(audioHtml, /aria-pressed="false"/);
+const mask = tokenize(byName.textMask, "%%面向连接%% 的协议");
+assert.equal(mask.type, "textMask");
+const maskHtml = render(byName.textMask, mask);
+assert.match(maskHtml, /class="quizify-mask"/);
+assert.match(maskHtml, /class="quizify-mask-text"/);
+assert.match(maskHtml, /role="button"/);
+assert.match(maskHtml, /aria-expanded="false"/);
+assert.equal(tokenize(byName.textMask, "%%   %% 的协议"), undefined);
+assert.equal(tokenize(byName.textMask, "%%没有闭合"), undefined);
 
 const quizifySource = fs.readFileSync(require.resolve("../quizify_addon/_quizify.js"), "utf8");
-const audioRuntime = fs.readFileSync(
-  require.resolve("../src/review/runtime/audio.js"),
+const maskRuntime = fs.readFileSync(
+  require.resolve("../src/review/runtime/mask.js"),
   "utf8"
 );
-assert.match(quizifySource, /function setPlayButtonState/);
-assert.match(quizifySource, /function updateLoopControls/);
-assert.match(
-  audioRuntime,
-  /activeLifecycle\.listen\(progressContainer, "keydown"/
-);
-assert.match(
-  audioRuntime,
-  /activeLifecycle\.listen\(audio, "ended", \(\) => setPlayButtonState\(false\)\)/
-);
-assert.doesNotMatch(quizifySource, /playBtn\.textContent/);
+assert.match(quizifySource, /function setRevealed/);
+assert.match(quizifySource, /data-quizify-mask-bound/);
+assert.match(maskRuntime, /classList\.toggle\("revealed", revealed\)/);
+assert.match(maskRuntime, /key !== "Enter"/);
+assert.doesNotMatch(quizifySource, /quizify-recite/);
+assert.doesNotMatch(quizifySource, /quizify-occlusion/);
+assert.doesNotMatch(quizifySource, /audio-player/);
+assert.doesNotMatch(quizifySource, /!audio\[/);
 
 assert.equal(quizify._internal.decodeAnkiFieldHtml("a<br>b&amp;c"), "a\nb&c");
 

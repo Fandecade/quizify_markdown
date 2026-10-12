@@ -164,10 +164,7 @@ def _line_references(line: str, offset: int, line_number: int) -> Iterable[Media
             index += 1
             continue
 
-        if line.startswith("!audio[", index):
-            kind = "audio"
-            label_start = index + len("!audio[")
-        elif line.startswith("![", index):
+        if line.startswith("![", index):
             kind = "image"
             label_start = index + 2
         else:
@@ -514,9 +511,6 @@ def append_media_manifest(
     lines = ["<!-- quizify-media:v1"]
     for reference in unique:
         filename = escape(reference.filename, quote=True)
-        if reference.kind == "audio":
-            lines.append(f'<audio src="{filename}"></audio>')
-        else:
-            lines.append(f'<img src="{filename}">')
+        lines.append(f'<img src="{filename}">')
     lines.append("-->")
     return f"{text.rstrip()}\n\n" + "\n".join(lines)

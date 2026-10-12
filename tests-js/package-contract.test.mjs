@@ -10,6 +10,8 @@ test("templates are offline-only and use the v1 boot API", async () => {
     const template = await readFile(new URL(`templates/${name}`, root), "utf8");
     assert.doesNotMatch(template, /https?:\/\/|%%[A-Z_]+%%/);
     assert.match(template, /Quizify\.boot/);
+    // Template sources name the runtime plainly; notetype.template_html()
+    // rewrites these references to the content-addressed media names.
     assert.match(template, /_quizify-i18n\.js/);
     assert.match(template, /_quizify\.js/);
     assert.match(template, /data-quizify-first-paint="pending"/);

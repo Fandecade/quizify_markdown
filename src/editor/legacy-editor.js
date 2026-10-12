@@ -61,17 +61,18 @@ import {
     "annotation",
     "collapse",
     "tabs",
-    "audio",
-    "recite",
-    "occlusion"
+    "mask"
   ]);
   let validationTimer = null;
   let toolbarResizeObserver = null;
   let lastEditor = null;
   let lastFieldIndex = 0;
   let commandContext = null;
+  let noticeTimer = null;
+  let mediaTicket = 0;
   let fieldNameCache = [];
   let shortcutsBound = false;
+  let mediaPasteBound = false;
   let sessionVersion = 0;
   const managedFieldNames = new Set(["Front", "Back"]);
   const boundEditors = new WeakMap();
@@ -442,6 +443,135 @@ import {
     return true;
   }
 
+  // Quizify fields stay in Anki's plain-text "HTML source" mode because the
+  // author writes Markdown. That mode ignores pasted pictures, so the addon
+  // takes the paste over: the bytes go to Anki's media folder -- the only
+  // place Anki syncs -- and the field receives a Markdown image instead.
+  const MEDIA_MESSAGE_PREFIX = "quizify:media:add:";
+
+  function showEditorNotice(text, kind = "info") {
+    let notice = document.querySelector(".quizify-editor-notice");
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.className = "quizify-editor-notice";
+      notice.setAttribute("lang", quizifyEditorLocale);
+      notice.setAttribute("role", "status");
+      document.body.appendChild(notice);
+    }
+    notice.textContent = text;
+    notice.dataset.kind = kind;
+    notice.hidden = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => {
+      notice.hidden = true;
+    }, 4000);
+  }
+
+  // The notice floats over Anki's own chrome, so it must never outlive the
+  // editor session that raised it.
+  function clearEditorNotice() {
+    clearTimeout(noticeTimer);
+    noticeTimer = null;
+    const notice = document.querySelector(".quizify-editor-notice");
+    if (!notice) return;
+    notice.hidden = true;
+    notice.remove?.();
+  }
+
+  function mediaFileName(file) {
+    const raw = String(file?.name || "")
+      .replace(/[\\/]+/g, "-")
+      .trim();
+    if (raw && !/^image\.\w+$/i.test(raw)) return raw.replace(/\s+/g, "-");
+    const type = /^image\/([\w+]+)$/i.exec(String(file?.type || ""));
+    const extension = (type?.[1] || "png").toLowerCase().replace(/^jpeg$/, "jpg");
+    return `quizify-paste-${Date.now()}.${extension}`;
+  }
+
+  function base64Of(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const chunk = 0x8000;
+    const parts = [];
+    for (let index = 0; index < bytes.length; index += chunk) {
+      parts.push(String.fromCharCode.apply(null, bytes.subarray(index, index + chunk)));
+    }
+    return btoa(parts.join(""));
+  }
+
+  function imageFromTransfer(transfer) {
+    const files = Array.from(transfer?.files || []);
+    return files.find((file) => /^image\//i.test(String(file?.type || ""))) || null;
+  }
+
+  function insertPastedImage(entry, name) {
+    const editor = entry?.editor || focusedEditor();
+    if (!editor) return false;
+    const snippet = `![](${name})`;
+    if (!replaceEditorSelection(editor, snippet, { start: snippet.length, end: snippet.length })) {
+      return false;
+    }
+    rememberEditor(editor, entry?.index ?? lastFieldIndex);
+    focusEditor(editor);
+    rememberCommandContext(entry);
+    scheduleValidation();
+    return true;
+  }
+
+  function handleMediaPaste(event) {
+    if (!active() || event.defaultPrevented || event.isComposing) return;
+    const file = imageFromTransfer(event.clipboardData);
+    if (!file) return;
+    const entry = fieldEntryForTarget(event.target) || currentFieldEntry();
+    if (!isManagedEntry(entry) || !entry?.editor) return;
+
+    const bridge = globalThis.pycmd;
+    if (typeof bridge !== "function") {
+      showEditorNotice(t("editor.paste_image_unavailable"), "warning");
+      return;
+    }
+    event.preventDefault?.();
+    event.stopPropagation?.();
+
+    const ticket = ++mediaTicket;
+    const reader = new FileReader();
+    reader.onerror = () => {
+      if (ticket === mediaTicket) showEditorNotice(t("editor.paste_image_failed"), "error");
+    };
+    reader.onload = () => {
+      let payload;
+      try {
+        payload = JSON.stringify({
+          name: mediaFileName(file),
+          data: base64Of(reader.result)
+        });
+      } catch (error) {
+        showEditorNotice(t("editor.paste_image_failed"), "error");
+        return;
+      }
+      try {
+        bridge(MEDIA_MESSAGE_PREFIX + payload, (response) => {
+          if (ticket !== mediaTicket) return;
+          const name = response && response.name ? String(response.name) : "";
+          if (!name || !insertPastedImage(entry, name)) {
+            showEditorNotice(t("editor.paste_image_failed"), "error");
+            return;
+          }
+          showEditorNotice(t("editor.paste_image_stored", { name }));
+        });
+      } catch (error) {
+        if (ticket === mediaTicket) showEditorNotice(t("editor.paste_image_failed"), "error");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function bindMediaPaste() {
+    if (mediaPasteBound) return;
+    if (typeof document.addEventListener !== "function") return;
+    document.addEventListener("paste", handleMediaPaste, true);
+    mediaPasteBound = true;
+  }
+
   function toolbarStatus() {
     return document.querySelector(".quizify-diagnostics-status");
   }
@@ -641,12 +771,8 @@ import {
     if (item.kind === "annotation") {
       return t("editor.preview_meta.annotation", { text: meta.text, note: meta.note });
     }
-    if (item.kind === "audio") return `${meta.title} -> ${meta.url}`;
-    if (item.kind === "recite") {
-      return t("editor.preview_meta.recite", { mask: meta.mask, mode: meta.mode });
-    }
-    if (item.kind === "occlusion") {
-      return t("editor.preview_meta.occlusion", { image: meta.image, regions: meta.regions });
+    if (item.kind === "mask") {
+      return t("editor.preview_meta.mask", { text: meta.text });
     }
     if (item.kind === "collapse" || item.kind === "tab") return meta.title;
     return "";
@@ -1130,6 +1256,7 @@ import {
     // The editor stays usable even if these enhancements fail to initialize.
     setOption("lineWrapping", true);
     ensureToolbar();
+    bindMediaPaste();
     plainTexts.forEach((input, index) => bindEditor(input, index));
     bindVisibleEditors();
     scheduleValidation();
@@ -1143,6 +1270,7 @@ import {
     stopObservingToolbarResize();
     floatingPanelManager.closeAll();
     document.body.classList.remove("quizify-editor-active");
+    clearEditorNotice();
     const toolbar = document.querySelector(".quizify-toolbar");
     if (toolbar) toolbar.hidden = true;
     updateCommandAvailability(null);

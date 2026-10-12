@@ -130,7 +130,7 @@ test("real DOM toolbar keeps native fields visible and scopes plain text and sho
   const snippetFixtures = globalThis.QuizifySyntax.snippets;
   const markdownFixtures = globalThis.QuizifySyntax.markdownActions;
   assert.equal(markdownFixtures.length, 16, "the production toolbar needs all Markdown actions");
-  assert.equal(snippetFixtures.length, 9, "the production toolbar needs all Quizify actions");
+  assert.equal(snippetFixtures.length, 7, "the production toolbar needs all Quizify actions");
 
   document.querySelector("#outside").focus();
   await import(`../src/editor/legacy-editor.js?dom-test=${Date.now()}`);
@@ -230,7 +230,7 @@ test("real DOM toolbar keeps native fields visible and scopes plain text and sho
   assert.equal(
     directCommandChildren.length,
     markdownFixtures.length + snippetFixtures.length + 2,
-    "the flat command flow must contain only 24 authoring buttons and two utilities"
+    "the flat command flow must contain only the authoring buttons and two utilities"
   );
   assert.deepEqual(
     directCommandChildren.slice(0, markdownFixtures.length),
@@ -240,7 +240,7 @@ test("real DOM toolbar keeps native fields visible and scopes plain text and sho
   assert.deepEqual(
     directCommandChildren.slice(markdownFixtures.length, markdownFixtures.length + snippetFixtures.length),
     directSnippets,
-    "all eight Quizify controls must follow the Markdown controls"
+    "all Quizify controls must follow the Markdown controls"
   );
   assert.equal(directCommandChildren.at(-2), directInspector);
   assert.equal(
@@ -255,7 +255,7 @@ test("real DOM toolbar keeps native fields visible and scopes plain text and sho
     directInspector.querySelector("summary"),
     directPreview.querySelector("summary")
   ];
-  assert.equal(visualControls.length, 27);
+  assert.equal(visualControls.length, markdownFixtures.length + snippetFixtures.length + 2);
   visualControls.forEach((control) => {
     assert(control.classList.contains("quizify-tool-button"));
     assert.match(
@@ -414,6 +414,61 @@ test("real DOM toolbar keeps native fields visible and scopes plain text and sho
   assert.notEqual(errorIcon, okIcon, "diagnostic state changes must replace the SVG icon");
   assert.equal(errorIcon.getAttribute("aria-hidden"), "true");
   assert.match(diagnosticsSummaryAfterError.getAttribute("aria-label"), /\S/);
+
+  // Quizify fields stay in Anki's plain-text HTML mode, which ignores pasted
+  // pictures. The addon takes the paste over, stores the bytes in the media
+  // folder and writes a Markdown image reference the phone can resolve.
+  globalThis.FileReader = dom.window.FileReader;
+  const mediaMessages = [];
+  globalThis.pycmd = (message, callback) => {
+    mediaMessages.push(message);
+    if (callback) callback({ name: "_pasted-1.png" });
+  };
+  const pasteWithPicture = (selector, name) => {
+    const event = new dom.window.Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", {
+      value: { files: [new dom.window.File([new Uint8Array([1, 2, 3])], name, { type: "image/png" })] }
+    });
+    document.querySelector(selector).dispatchEvent(event);
+    return event;
+  };
+
+  front.value = "Front";
+  const picturePaste = pasteWithPicture("#front-input", "截图 1.png");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  assert.equal(picturePaste.defaultPrevented, true, "the addon must take pasted pictures over");
+  assert.equal(mediaMessages.length, 1);
+  assert.ok(mediaMessages[0].startsWith("quizify:media:add:"), mediaMessages[0]);
+  const stored = JSON.parse(mediaMessages[0].slice("quizify:media:add:".length));
+  assert.equal(stored.name, "截图-1.png");
+  assert.equal(Buffer.from(stored.data, "base64").toString("hex"), "010203");
+  assert.equal(front.value, "Front![](_pasted-1.png)");
+  const mediaNotice = document.querySelector(".quizify-editor-notice");
+  assert.equal(mediaNotice.hidden, false);
+  assert.equal(mediaNotice.dataset.kind, "info");
+  assert.match(mediaNotice.textContent, /_pasted-1\.png/);
+
+  const untouchedPaste = pasteWithPicture("#extra-input", "其他.png");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(untouchedPaste.defaultPrevented, false, "fields Quizify does not manage keep Anki's own paste");
+  assert.equal(mediaMessages.length, 1);
+
+  delete globalThis.pycmd;
+  const bridgelessPaste = pasteWithPicture("#front-input", "无桥接.png");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(bridgelessPaste.defaultPrevented, false, "without the bridge the native paste must still run");
+  assert.match(mediaNotice.textContent, /媒体库/);
+
+  globalThis.pycmd = (message, callback) => {
+    mediaMessages.push(message);
+    if (callback) callback({ name: "" });
+  };
+  const failedPaste = pasteWithPicture("#front-input", "失败.png");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(failedPaste.defaultPrevented, true);
+  assert.equal(mediaNotice.dataset.kind, "error");
+  assert.doesNotMatch(front.value, /失败/);
 
   noteEditor.fields = Promise.resolve([{ name: "Text", plainText: false }]);
   assert.equal(await globalThis.quizifyEditorDeactivate(), true);

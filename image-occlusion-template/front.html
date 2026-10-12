@@ -163,6 +163,82 @@
                 };
             }
 
+            // Masks live in percentages, never in pixels. A tablet WebView may
+            // scale the whole page (AnkiMobile's content zoom, AnkiDroid's
+            // display scaling); pixel values measured with
+            // getBoundingClientRect() are in *visual* units, so writing them
+            // back into style.left got scaled a second time and every mask
+            // drifted further from its picture the larger the ancestor scale
+            // was. Percentages are immune to that, because they resolve inside
+            // the image box itself.
+            function imageLayoutSize() {
+                if (!img) {
+                    return { width: 1, height: 1 };
+                }
+                const width = parseFloat(img.style.width) || img.clientWidth || 1;
+                const height = parseFloat(img.style.height) || img.clientHeight || 1;
+                return {
+                    width: Math.max(1, width),
+                    height: Math.max(1, height)
+                };
+            }
+
+            // How many visual pixels one layout pixel currently occupies.
+            function visualScale() {
+                if (!img) {
+                    return 1;
+                }
+                const rect = img.getBoundingClientRect();
+                const layout = imageLayoutSize();
+                if (!rect.width || !layout.width) {
+                    return 1;
+                }
+                const scale = rect.width / layout.width;
+                return Number.isFinite(scale) && scale > 0 ? scale : 1;
+            }
+
+            function setMaskPercents(rect, percent) {
+                const safe = value => (Number.isFinite(value) ? value : 0);
+                rect.maskPercent = {
+                    x: safe(percent.x),
+                    y: safe(percent.y),
+                    w: safe(percent.w),
+                    h: safe(percent.h)
+                };
+                rect.style.left = rect.maskPercent.x + '%';
+                rect.style.top = rect.maskPercent.y + '%';
+                rect.style.width = rect.maskPercent.w + '%';
+                rect.style.height = rect.maskPercent.h + '%';
+                return rect.maskPercent;
+            }
+
+            function maskPercents(rect) {
+                return rect.maskPercent || setMaskPercents(rect, { x: 0, y: 0, w: 0, h: 0 });
+            }
+
+            // Percentages -> layout pixels, for the drag maths below.
+            function maskBox(rect) {
+                const percent = maskPercents(rect);
+                const layout = imageLayoutSize();
+                return {
+                    x: percent.x / 100 * layout.width,
+                    y: percent.y / 100 * layout.height,
+                    width: percent.w / 100 * layout.width,
+                    height: percent.h / 100 * layout.height
+                };
+            }
+
+            // Layout pixels -> percentages, so the DOM never holds stale pixels.
+            function setMaskBox(rect, box) {
+                const layout = imageLayoutSize();
+                return setMaskPercents(rect, {
+                    x: Math.max(0, box.x) / layout.width * 100,
+                    y: Math.max(0, box.y) / layout.height * 100,
+                    w: Math.max(0, box.width) / layout.width * 100,
+                    h: Math.max(0, box.height) / layout.height * 100
+                });
+            }
+
             function computeBaseFitScale() {
                 if (!naturalImageWidth || !naturalImageHeight || !mainImageContainer) {
                     return 1;
@@ -233,11 +309,14 @@
                 if (imageRect.width <= viewportRect.width) {
                     imagePanX = 0;
                 } else {
+                    // The rects are visual pixels; the pan is a CSS length, so
+                    // the deltas have to come back into layout pixels first.
+                    const scale = visualScale();
                     if (imageRect.left > viewportRect.left) {
-                        imagePanX -= (imageRect.left - viewportRect.left);
+                        imagePanX -= (imageRect.left - viewportRect.left) / scale;
                     }
                     if (imageRect.right < viewportRect.right) {
-                        imagePanX += (viewportRect.right - imageRect.right);
+                        imagePanX += (viewportRect.right - imageRect.right) / scale;
                     }
                 }
 
@@ -245,10 +324,10 @@
                     imagePanY = 0;
                 } else {
                     if (imageRect.top > viewportRect.top) {
-                        imagePanY -= (imageRect.top - viewportRect.top);
+                        imagePanY -= (imageRect.top - viewportRect.top) / scale;
                     }
                     if (imageRect.bottom < viewportRect.bottom) {
-                        imagePanY += (viewportRect.bottom - imageRect.bottom);
+                        imagePanY += (viewportRect.bottom - imageRect.bottom) / scale;
                     }
                 }
             }
@@ -667,24 +746,9 @@
                     return;
                 }
 
-                // 计算缩放比例
-                const scaleX = currentWidth / lastImageWidth;
-                const scaleY = currentHeight / lastImageHeight;
-
-                // 更新所有遮挡的位置和大小
-                rects.forEach(rect => {
-                    const currentLeft = parseFloat(rect.style.left);
-                    const currentTop = parseFloat(rect.style.top);
-                    const currentWidth = parseFloat(rect.style.width);
-                    const currentHeight = parseFloat(rect.style.height);
-
-                    // 应用缩放
-                    rect.style.left = (currentLeft * scaleX) + 'px';
-                    rect.style.top = (currentTop * scaleY) + 'px';
-                    rect.style.width = (currentWidth * scaleX) + 'px';
-                    rect.style.height = (currentHeight * scaleY) + 'px';
-                });
-
+                // 遮挡用百分比定位，会跟着图片一起缩放，不需要逐块换算像素
+                // （旧版在这里按 rect 比例重算 left/top，测量值是视觉像素，
+                // 在被缩放的平板 WebView 里会越算越偏）。
                 // 更新记录的尺寸
                 lastImageWidth = currentWidth;
                 lastImageHeight = currentHeight;
@@ -720,17 +784,8 @@
                             const [xPercent, yPercent, widthPercent, heightPercent, orderNum] = coord.split(',').map(Number);
                             const order = isNaN(orderNum) ? index + 1 : orderNum;
 
-                            // 使用当前图片尺寸计算绝对坐标
-                            const renderedSize = getRenderedImageSize();
-                            const currentImgWidth = renderedSize.width;
-                            const currentImgHeight = renderedSize.height;
-
-                            const x = (xPercent / 100) * currentImgWidth;
-                            const y = (yPercent / 100) * currentImgHeight;
-                            const width = (widthPercent / 100) * currentImgWidth;
-                            const height = (heightPercent / 100) * currentImgHeight;
-
-                            createRect(x, y, width, height, order);
+                            // 百分比直接交给遮罩，任何显示器/缩放比例下都与图片对齐
+                            createRect(xPercent, yPercent, widthPercent, heightPercent, order);
                         });
 
                         // 按顺序排序遮挡
@@ -824,6 +879,7 @@
             }
 
             // 创建矩形遮挡
+            // x/y/width/height are percentages of the picture, not pixels.
             function createRect(x, y, width, height, order = null) {
                 if (order === null) {
                     order = getNextAvailableOrder();
@@ -835,10 +891,6 @@
 
                 Object.assign(rect.style, {
                     position: 'absolute',
-                    left: x + 'px',
-                    top: y + 'px',
-                    width: width + 'px',
-                    height: height + 'px',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -846,6 +898,7 @@
                     touchAction: 'none',
                     boxSizing: 'border-box' // 确保边框不影响尺寸计算
                 });
+                setMaskPercents(rect, { x, y, w: width, h: height });
 
                 // 创建序号元素
                 const orderElement = document.createElement('div');
@@ -1017,13 +1070,14 @@
             // 获取相对于图片的坐标
             function getImageRelativeCoordinates(clientX, clientY) {
                 const imgRect = img.getBoundingClientRect();
-                const imgX = clientX - imgRect.left;
-                const imgY = clientY - imgRect.top;
+                // 指针位置同样是视觉像素，先换算回布局像素再参与拖拽计算
+                const scale = visualScale();
+                const imgX = (clientX - imgRect.left) / scale;
+                const imgY = (clientY - imgRect.top) / scale;
 
                 // 确保坐标在图片范围内
-                const renderedSize = getRenderedImageSize();
-                const currentImgWidth = renderedSize.width;
-                const currentImgHeight = renderedSize.height;
+                const currentImgWidth = imageLayoutSize().width;
+                const currentImgHeight = imageLayoutSize().height;
 
                 return {
                     x: Math.max(0, Math.min(imgX, currentImgWidth)),
@@ -1068,29 +1122,36 @@
                     const width = imgX - startX;
                     const height = imgY - startY;
 
-                    currentRect.style.width = Math.abs(width) + 'px';
-                    currentRect.style.height = Math.abs(height) + 'px';
-                    currentRect.style.left = (width > 0 ? startX : imgX) + 'px';
-                    currentRect.style.top = (height > 0 ? startY : imgY) + 'px';
+                    setMaskBox(currentRect, {
+                        x: width > 0 ? startX : imgX,
+                        y: height > 0 ? startY : imgY,
+                        width: Math.abs(width),
+                        height: Math.abs(height)
+                    });
                 } else if (isMovingMask && selectedMask) {
                     // 移动现有遮挡
                     const coords = getImageRelativeCoordinates(e.clientX, e.clientY);
                     let newLeft = coords.x - offsetX;
                     let newTop = coords.y - offsetY;
 
-                    // 获取遮挡的宽度和高度
-                    const width = parseFloat(selectedMask.style.width);
-                    const height = parseFloat(selectedMask.style.height);
-                    const renderedSize = getRenderedImageSize();
-                    const currentImgWidth = renderedSize.width;
-                    const currentImgHeight = renderedSize.height;
+                    // 获取遮挡的宽度和高度（内部已换算成布局像素）
+                    const box = maskBox(selectedMask);
+                    const width = box.width;
+                    const height = box.height;
+                    const layout = imageLayoutSize();
+                    const currentImgWidth = layout.width;
+                    const currentImgHeight = layout.height;
 
                     // 确保遮挡不会移出图片边界
                     newLeft = Math.max(0, Math.min(newLeft, currentImgWidth - width));
                     newTop = Math.max(0, Math.min(newTop, currentImgHeight - height));
 
-                    selectedMask.style.left = newLeft + 'px';
-                    selectedMask.style.top = newTop + 'px';
+                    setMaskBox(selectedMask, {
+                        x: newLeft,
+                        y: newTop,
+                        width,
+                        height
+                    });
                 }
             });
 
@@ -1106,10 +1167,12 @@
                     const width = imgX - startX;
                     const height = imgY - startY;
 
-                    currentRect.style.width = Math.abs(width) + 'px';
-                    currentRect.style.height = Math.abs(height) + 'px';
-                    currentRect.style.left = (width > 0 ? startX : imgX) + 'px';
-                    currentRect.style.top = (height > 0 ? startY : imgY) + 'px';
+                    setMaskBox(currentRect, {
+                        x: width > 0 ? startX : imgX,
+                        y: height > 0 ? startY : imgY,
+                        width: Math.abs(width),
+                        height: Math.abs(height)
+                    });
 
                     e.preventDefault(); // 阻止默认行为如滚动
                 } else if (isMovingMask && selectedMask) {
@@ -1119,19 +1182,24 @@
                     let newLeft = coords.x - offsetX;
                     let newTop = coords.y - offsetY;
 
-                    // 获取遮挡的宽度和高度
-                    const width = parseFloat(selectedMask.style.width);
-                    const height = parseFloat(selectedMask.style.height);
-                    const renderedSize = getRenderedImageSize();
-                    const currentImgWidth = renderedSize.width;
-                    const currentImgHeight = renderedSize.height;
+                    // 获取遮挡的宽度和高度（内部已换算成布局像素）
+                    const box = maskBox(selectedMask);
+                    const width = box.width;
+                    const height = box.height;
+                    const layout = imageLayoutSize();
+                    const currentImgWidth = layout.width;
+                    const currentImgHeight = layout.height;
 
                     // 确保遮挡不会移出图片边界
                     newLeft = Math.max(0, Math.min(newLeft, currentImgWidth - width));
                     newTop = Math.max(0, Math.min(newTop, currentImgHeight - height));
 
-                    selectedMask.style.left = newLeft + 'px';
-                    selectedMask.style.top = newTop + 'px';
+                    setMaskBox(selectedMask, {
+                        x: newLeft,
+                        y: newTop,
+                        width,
+                        height
+                    });
 
                     e.preventDefault(); // 阻止默认行为
                 }
@@ -1141,8 +1209,8 @@
             document.addEventListener('mouseup', (e) => {
                 if (isDragging && currentRect) {
                     // 检查是否是有效的矩形（宽高都大于5像素）
-                    const width = parseFloat(currentRect.style.width);
-                    const height = parseFloat(currentRect.style.height);
+                    const width = maskBox(currentRect).width;
+                    const height = maskBox(currentRect).height;
 
                     if (width < 5 || height < 5) {
                         // 太小的矩形视为无效，移除
@@ -1167,8 +1235,8 @@
             document.addEventListener('touchend', (e) => {
                 if (isDragging && currentRect) {
                     // 检查是否是有效的矩形（宽高都大于5像素）
-                    const width = parseFloat(currentRect.style.width);
-                    const height = parseFloat(currentRect.style.height);
+                    const width = maskBox(currentRect).width;
+                    const height = maskBox(currentRect).height;
 
                     if (width < 5 || height < 5) {
                         // 太小的矩形视为无效，移除
@@ -1242,24 +1310,17 @@
 
             // 复制坐标按钮事件
             document.getElementById('copyCoords').addEventListener('click', () => {
-                // 转换为百分比坐标
-                const renderedSize = getRenderedImageSize();
-                const currentImgWidth = renderedSize.width;
-                const currentImgHeight = renderedSize.height;
-
+                // 遮罩本身就存着百分比，直接读出即可（保留两位小数）
                 const coords = rects.map(rect => {
-                    const l = parseFloat(rect.style.left);
-                    const t = parseFloat(rect.style.top);
-                    const w = parseFloat(rect.style.width);
-                    const h = parseFloat(rect.style.height);
+                    const percent = maskPercents(rect);
 
-                    // 计算百分比值（保留两位小数）
-                    const xPercent = (l / currentImgWidth * 100).toFixed(2);
-                    const yPercent = (t / currentImgHeight * 100).toFixed(2);
-                    const widthPercent = (w / currentImgWidth * 100).toFixed(2);
-                    const heightPercent = (h / currentImgHeight * 100).toFixed(2);
-
-                    return `${xPercent},${yPercent},${widthPercent},${heightPercent},${rect.order}`;
+                    return [
+                        percent.x.toFixed(2),
+                        percent.y.toFixed(2),
+                        percent.w.toFixed(2),
+                        percent.h.toFixed(2),
+                        rect.order
+                    ].join(',');
                 }).filter(coord => !coord.includes('NaN')).join(';');
 
                 if (coords) {

@@ -19,32 +19,27 @@ function target() {
   };
 }
 
-test("review storage isolates answer, reveal, recite and position state", () => {
+test("review storage isolates answer, reveal and position state", () => {
   const host = target();
   const storage = createReviewStorage(host);
 
   storage.saveUserAnswers({ fitbs: { a: "42" }, mcqs: {} });
   storage.saveRevealProgress({ revealed: ["front-reveal-0"], completed: false });
-  storage.saveReciteState({ front: { masked: [1] } });
   storage.saveFloatingPosition({ x: 0.25, y: 0.75 });
 
   assert.deepEqual(storage.loadUserAnswers(), { fitbs: { a: "42" }, mcqs: {} });
   assert.deepEqual(storage.loadRevealProgress().revealed, ["front-reveal-0"]);
-  assert.deepEqual(storage.loadReciteState(), { front: { masked: [1] } });
   assert.deepEqual(storage.loadFloatingPosition(), { x: 0.25, y: 0.75 });
 
   storage.clearUserAnswers();
   storage.clearRevealProgress();
-  storage.clearReciteState();
   assert.deepEqual(storage.loadUserAnswers(), { fitbs: {}, mcqs: {} });
   assert.deepEqual(storage.loadRevealProgress(), { revealed: [], completed: false });
-  assert.deepEqual(storage.loadReciteState(), {});
 });
 
 test("review storage degrades safely when persistence is unavailable", () => {
   const storage = createReviewStorage({ Persistence: { isAvailable: () => false } });
   assert.deepEqual(storage.loadUserAnswers(), { fitbs: {}, mcqs: {} });
   assert.deepEqual(storage.loadRevealProgress(), { revealed: [], completed: false });
-  assert.deepEqual(storage.loadReciteState(), {});
   assert.equal(storage.loadFloatingPosition(), null);
 });

@@ -13,6 +13,37 @@
 .quizify-editor-unavailable[hidden] {
   display: none !important;
 }
+.quizify-editor-notice {
+  background: #e1f3ef;
+  border: 1px solid rgba(20, 125, 114, 0.35);
+  border-left: 4px solid #147d72;
+  border-radius: 9px;
+  bottom: 14px;
+  box-shadow: 0 6px 18px rgba(16, 32, 28, 0.18);
+  color: #0b4a44;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: min(420px, 80vw);
+  padding: 9px 12px;
+  position: fixed;
+  right: 16px;
+  z-index: 2147483000;
+}
+.quizify-editor-notice[data-kind=warning] {
+  background: #fff4d6;
+  border-color: rgba(138, 90, 18, 0.35);
+  border-left-color: #8a5a12;
+  color: #623d0b;
+}
+.quizify-editor-notice[data-kind=error] {
+  background: #fde8e6;
+  border-color: rgba(179, 38, 30, 0.35);
+  border-left-color: #b3261e;
+  color: #6d1a15;
+}
+.quizify-editor-notice[hidden] {
+  display: none !important;
+}
 .quizify-toolbar {
   --qt-surface: #fffefa;
   --qt-surface-soft: #f5f6f2;
@@ -521,17 +552,11 @@ body.night_mode .quizify-toolbar {
 .quizify-preview-list li[data-kind=fitb] .quizify-preview-kind {
   color: var(--qt-purple);
 }
-.quizify-preview-list li[data-kind=recite] {
-  border-left-color: var(--qt-purple);
+.quizify-preview-list li[data-kind=mask] {
+  border-left-color: var(--qt-green, var(--qt-purple));
 }
-.quizify-preview-list li[data-kind=recite] .quizify-preview-kind {
-  color: var(--qt-purple);
-}
-.quizify-preview-list li[data-kind=audio] {
-  border-left-color: var(--qt-amber);
-}
-.quizify-preview-list li[data-kind=audio] .quizify-preview-kind {
-  color: var(--qt-amber);
+.quizify-preview-list li[data-kind=mask] .quizify-preview-kind {
+  color: var(--qt-green, var(--qt-purple));
 }
 .quizify-preview-list li[data-kind=reveal],
 .quizify-preview-list li[data-kind=annotation] {

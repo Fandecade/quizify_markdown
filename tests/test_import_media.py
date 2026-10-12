@@ -9,7 +9,7 @@ media = load_module("importer.media")
 
 
 class ImportMediaTest(unittest.TestCase):
-    def test_finds_images_and_quizify_audio_outside_protected_blocks(self):
+    def test_finds_images_outside_protected_blocks(self):
         text = """![one](assets/one.png)
 `![inline](ignored.png)`
 ```markdown
@@ -18,7 +18,7 @@ class ImportMediaTest(unittest.TestCase):
 $$
 ![math](ignored.png)
 $$
-!audio[clip](audio/test.mp3)
+![two](assets/two.png)
 """
 
         refs = media.find_media_references(text)
@@ -27,7 +27,7 @@ $$
             [(item.kind, item.target, item.line) for item in refs],
             [
                 ("image", "assets/one.png", 1),
-                ("audio", "audio/test.mp3", 9),
+                ("image", "assets/two.png", 9),
             ],
         )
 
@@ -201,14 +201,14 @@ $$
             [
                 media.ImportedMedia("image", "a&b.png"),
                 media.ImportedMedia("image", "a&b.png"),
-                media.ImportedMedia("audio", "voice.mp3"),
+                media.ImportedMedia("image", "c&d.png"),
             ],
         )
 
         self.assertTrue(value.startswith("Front\n\n<!-- quizify-media:v1\n"))
         self.assertEqual(value.count("a&amp;b.png"), 1)
         self.assertIn('<img src="a&amp;b.png">', value)
-        self.assertIn('<audio src="voice.mp3"></audio>', value)
+        self.assertIn('<img src="c&amp;d.png">', value)
         self.assertNotIn("[sound:", value)
         self.assertTrue(value.endswith("\n-->"))
 

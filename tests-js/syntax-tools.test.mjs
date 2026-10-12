@@ -9,13 +9,13 @@ test("syntax diagnostics preserve CRLF line and column positions", () => {
   const source = [
     "prefix",
     "  {{ }} and [[missing separator]]",
-    "text !audio[](clip.mp3)"
+    "text %%hidden%% and %%unpaired"
   ].join("\r\n");
 
   const diagnostics = syntax.analyzeQuizifySyntax(source);
   const fill = diagnostics.find((item) => item.message.includes("填空题答案为空"));
   const reveal = diagnostics.find((item) => item.message.includes("揭示语法缺少"));
-  const audio = diagnostics.find((item) => item.message.includes("音频标题为空"));
+  const unpaired = diagnostics.find((item) => item.message.includes("没有配对"));
 
   assert.deepEqual(
     { line: fill.line, column: fill.column },
@@ -26,14 +26,14 @@ test("syntax diagnostics preserve CRLF line and column positions", () => {
     { line: 2, column: 13 }
   );
   assert.deepEqual(
-    { line: audio.line, column: audio.column },
-    { line: 3, column: 6 }
+    { line: unpaired.line, column: unpaired.column },
+    { line: 3, column: 1 }
   );
 
   const preview = syntax.collectQuizifyPreview(source);
   assert.equal(preview.find((item) => item.kind === "fitb").line, 2);
   assert.equal(preview.find((item) => item.kind === "reveal").line, 2);
-  assert.equal(preview.find((item) => item.kind === "audio").line, 3);
+  assert.equal(preview.find((item) => item.kind === "mask").line, 3);
 });
 
 test("syntax diagnostics avoid repeated full-prefix scans on large fields", () => {
@@ -76,16 +76,16 @@ $$
 {{ }}
 [[missing separator]]
 []^()^
-!audio[]()
+%%hidden%%
 ;;;
 A. only option
 ;;;A
 ::: fake collapse
 === fake tab
-:::: recite mask=999 mode=invalid
+:::: four colon fence
 %% unpaired
 $$
-inline $ {{ }} + [[also missing]] + !audio[]() $
+inline $ {{ }} + [[also missing]] + %%hidden%% $
 paren \({{ }} + [[also missing]]\)
 bracket \[::: fake block
 === fake block
@@ -97,12 +97,12 @@ after`;
 });
 
 test("syntax protection keeps real syntax outside math and preserves its positions", () => {
-  const source = String.raw`$[[hidden reveal]]$  {{ }} and [[visible reveal]]
-\({{ hidden fill }}\) !audio[](clip.mp3)
+  const source = String.raw`$[[hidden reveal]]$  {{ }} and [[visible reveal]] %%shown%%
+\({{ hidden fill }}\) and %%unpaired
 $$
 ::: hidden collapse
 === hidden tab
-:::: recite mask=999
+:::: four colon fence
 $$
 ::: visible collapse
 content
@@ -117,7 +117,7 @@ B. Beta
 
   const fill = diagnostics.find((item) => item.message.includes("填空题答案为空"));
   const reveal = diagnostics.find((item) => item.message.includes("揭示语法缺少"));
-  const audio = diagnostics.find((item) => item.message.includes("音频标题为空"));
+  const unpaired = diagnostics.find((item) => item.message.includes("没有配对"));
   assert.deepEqual(
     { line: fill.line, column: fill.column },
     { line: 1, column: source.split("\n")[0].indexOf("{{ }}") + 1 }
@@ -127,8 +127,8 @@ B. Beta
     { line: 1, column: source.split("\n")[0].indexOf("[[visible reveal]]") + 1 }
   );
   assert.deepEqual(
-    { line: audio.line, column: audio.column },
-    { line: 2, column: source.split("\n")[1].indexOf("!audio") + 1 }
+    { line: unpaired.line, column: unpaired.column },
+    { line: 2, column: 1 }
   );
 
   const preview = syntax.collectQuizifyPreview(source);
@@ -137,7 +137,7 @@ B. Beta
     [
       { kind: "fitb", line: 1 },
       { kind: "reveal", line: 1 },
-      { kind: "audio", line: 2 },
+      { kind: "mask", line: 1 },
       { kind: "collapse", line: 8 },
       { kind: "single", line: 11 }
     ]
@@ -159,7 +159,7 @@ test("same-line preview ordering follows source positions instead of locale coll
 
 test("an unmatched math opener does not expose markers in a later valid formula", () => {
   const source = String.raw`unclosed $$ leaves {{ }} visible
-valid \({{ }} + [[hidden]] + !audio[]()\)
+valid \({{ }} + [[hidden]] + %%hidden%%\)
 outside [[visible]]`;
 
   const diagnostics = syntax.analyzeQuizifySyntax(source);
@@ -200,15 +200,12 @@ test("syntax tools ignore inline and raw code with the same precedence as render
 
 test("ordinary link labels literalize interactive controls while retaining math ownership", () => {
   const source = [
-    "Outside {{real}} [[visible||answer]] [shown]^(note)^",
-    String.raw`\![{{ }}](safe.html)`,
-    "[{{ }} [[q||a]] []^()^ and $z$](safe.html) !audio[](clip.mp3)"
+    "Outside {{real}} [[visible||answer]] [shown]^(note)^ %%outer%%",
+    String.raw`\![{{ }} %%image%%](safe.html)`,
+    "[{{ }} [[q||a]] []^()^ and $z$ %%label%%](safe.html)"
   ].join("\n");
 
-  assert.deepEqual(
-    syntax.analyzeQuizifySyntax(source).map(({ line, message }) => ({ line, message })),
-    [{ line: 3, message: "音频标题为空。" }]
-  );
+  assert.deepEqual(syntax.analyzeQuizifySyntax(source), []);
 
   const preview = syntax.collectQuizifyPreview(source);
   assert.deepEqual(
@@ -216,13 +213,10 @@ test("ordinary link labels literalize interactive controls while retaining math 
       .filter((item) => item.line === 1)
       .map((item) => item.kind)
       .sort(),
-    ["annotation", "fitb", "reveal"]
-  );
-  assert.deepEqual(
-    preview.filter((item) => item.line === 3).map((item) => item.kind),
-    ["audio"]
+    ["annotation", "fitb", "mask", "reveal"]
   );
   assert.equal(preview.some((item) => item.line === 2), false);
+  assert.equal(preview.some((item) => item.line === 3), false);
 });
 
 test("image labels remain opaque to diagnostics and structure preview", () => {

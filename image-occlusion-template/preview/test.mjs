@@ -29,7 +29,10 @@ function closeAllWindows() {
   }
 }
 
-async function bootFront() {
+// `scale` stands in for a tablet WebView (AnkiMobile content zoom, AnkiDroid
+// display scaling) that magnifies the page: getBoundingClientRect() then
+// reports visual pixels while style lengths stay in CSS pixels.
+async function bootFront({ scale = 1 } = {}) {
   const tpl = await readFile(path.join(root, "front.html"), "utf8");
   const css = await readFile(path.join(root, "style.css"), "utf8");
   const dom = new JSDOM(
@@ -47,12 +50,15 @@ async function bootFront() {
     Object.defineProperty(img, "offsetWidth", { value: 400 });
     Object.defineProperty(img, "clientWidth", { value: 400 });
   }
-  img.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 200, right: 400, bottom: 200 });
+  const visual = { left: 0, top: 0, width: 400 * scale, height: 200 * scale };
+  visual.right = visual.left + visual.width;
+  visual.bottom = visual.top + visual.height;
+  img.getBoundingClientRect = () => visual;
   window.document.querySelectorAll(".main-image").forEach((el) => {
-    el.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 200, right: 400, bottom: 200 });
+    el.getBoundingClientRect = () => visual;
   });
   window.HTMLElement.prototype.getBoundingClientRect = function () {
-    return { left: 0, top: 0, width: 400, height: 200, right: 400, bottom: 200 };
+    return visual;
   };
   img.dispatchEvent(new window.Event("load"));
   await new Promise((r) => window.setTimeout(r, 0));
@@ -69,6 +75,71 @@ test("coordinates from the Opinions field become masks in reveal order", async (
   assert.deepEqual(rects.map((r) => r.order), [1, 2]);
   // Nothing is revealed on the front side at first.
   assert.ok(rects.every((r) => !r.classList.contains("revealed")));
+});
+
+test("masks are positioned in percentages, never in pixels", async () => {
+  const window = await bootFront();
+  const [first, second] = [...window.document.querySelectorAll(".mask-rect")];
+  assert.equal(first.style.left, "10%");
+  assert.equal(first.style.top, "10%");
+  assert.equal(first.style.width, "30%");
+  assert.equal(first.style.height, "20%");
+  assert.equal(second.style.left, "40%");
+  assert.equal(second.style.top, "40%");
+  assert.doesNotMatch(first.getAttribute("style"), /px/);
+});
+
+test("masks stay aligned when the WebView magnifies the page", async () => {
+  // Regression: a tablet WebView reports visual pixels from
+  // getBoundingClientRect(); the old code wrote those back as CSS pixels, so a
+  // 1.4x page zoom moved every mask 1.4x too far (12.5% became 17.5%).
+  const window = await bootFront({ scale: 1.4 });
+  const rects = [...window.document.querySelectorAll(".mask-rect")];
+  assert.deepEqual(
+    rects.map((r) => [r.style.left, r.style.top, r.style.width, r.style.height]),
+    [
+      ["10%", "10%", "30%", "20%"],
+      ["40%", "40%", "30%", "20%"]
+    ]
+  );
+});
+
+test("copying the coordinates reads the percentages back unchanged", async () => {
+  const window = await bootFront({ scale: 1.4 });
+  window.document.getElementById("copyCoords").dispatchEvent(
+    new window.MouseEvent("click", { bubbles: true })
+  );
+  assert.equal(
+    window.document.getElementById("coordsTextarea").value,
+    "10.00,10.00,30.00,20.00,1;40.00,40.00,30.00,20.00,2"
+  );
+});
+
+test("drawing a mask while editing stores the same percentages on every device", async () => {
+  const window = await bootFront({ scale: 1.4 });
+  window.document.getElementById("toggleEditMode").dispatchEvent(
+    new window.MouseEvent("click", { bubbles: true })
+  );
+  const img = window.document.getElementById("demo");
+  const mouse = (type, x, y) =>
+    img.dispatchEvent(
+      new window.MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y })
+    );
+
+  // Drag from the top-left quarter to the middle of the (magnified) picture.
+  mouse("mousedown", 56, 28);
+  mouse("mousemove", 168, 84);
+  mouse("mouseup", 168, 84);
+
+  const masks = [...window.document.querySelectorAll(".mask-rect")];
+  assert.equal(masks.length, 3, "the drag adds one mask");
+  const drawn = masks[masks.length - 1];
+  // 56..168 visual px at 1.4x is 40..120 layout px on a 400x200 picture.
+  assert.equal(drawn.style.left, "10%");
+  assert.equal(drawn.style.top, "10%");
+  assert.equal(drawn.style.width, "20%");
+  assert.equal(drawn.style.height, "20%");
+  assert.doesNotMatch(drawn.getAttribute("style"), /px/);
 });
 
 test("clicking a mask reveals it and clicking again re-hides it", async () => {

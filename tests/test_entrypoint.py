@@ -213,7 +213,7 @@ class EntrypointTest(unittest.TestCase):
         self.assertIn("Migrate configuration", self.warnings[0])
         self.assertIn("Synchronize media", self.warnings[0])
 
-    def test_tools_menu_groups_import_occlusion_and_settings_actions(self):
+    def test_tools_menu_groups_import_and_settings_actions(self):
         self.addon.add_menu()
 
         actions = [action for action in self.menu_actions if action is not None]
@@ -221,7 +221,7 @@ class EntrypointTest(unittest.TestCase):
             [action.label for action in actions],
             [
                 "Import Markdown Cards…",
-                "Image occlusion: build coordinates…",
+                "Import pictures to media…",
                 "Settings…",
             ],
         )

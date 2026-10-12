@@ -14,6 +14,16 @@ function ruleFor(selector) {
   return match[1];
 }
 
+test("the review stylesheet stays brace-balanced so later rules are not swallowed", () => {
+  // A single stray "}" makes every following rule part of an enclosing block
+  // (or invalid), which silently disables the inline-mask styling.
+  const open = (css.match(/\{/g) || []).length;
+  const close = (css.match(/\}/g) || []).length;
+  assert.equal(open, close, "unbalanced braces in src/review/styles.css");
+  const maskRule = css.indexOf(".quizify-mask {");
+  assert(maskRule > -1, "inline mask rule must exist in the review stylesheet");
+});
+
 test("card layout and focus styles no longer target every native button", () => {
   assert.doesNotMatch(css, /(?:^|})\s*\*\s*\{/m);
   assert.doesNotMatch(css, /(?:^|,)\s*button:focus-visible\s*(?:,|\{)/m);
@@ -44,10 +54,8 @@ test("owned controls neutralize Anki button defaults before component styling", 
 
 test("every native card control has a component selector strong enough for Anki states", () => {
   for (const selector of [
-    "button.quizify-recite-shuffle",
     "button.feedback-icon",
     ".choice > button.feedback",
-    ".audio-player .player-controls button",
     "button.quizify-orb",
     ".quizify-floating-control button.quizify-orb:hover",
     ".quizify-floating-control button.quizify-orb:disabled"
@@ -55,7 +63,13 @@ test("every native card control has a component selector strong enough for Anki 
     assert(css.includes(selector), `missing owned component selector: ${selector}`);
   }
 
-  assert(ruleFor(".audio-player .player-controls button").includes("box-shadow: none"));
-  assert(ruleFor(".player-controls button:disabled").includes("box-shadow: none"));
   assert(ruleFor(".quizify-floating-control button.quizify-orb:disabled").includes("border: 0"));
+});
+
+test("inline text masks own their covered styling without leaking into native buttons", () => {
+  const mask = ruleFor(".quizify-mask");
+  assert.match(mask, /color:\s*transparent/);
+  assert.match(mask, /background:\s*var\(--q-mask-fill\)/);
+  const revealed = ruleFor(".quizify-mask.revealed");
+  assert.match(revealed, /color:\s*inherit/);
 });

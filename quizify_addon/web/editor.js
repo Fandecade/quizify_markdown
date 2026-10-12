@@ -508,9 +508,7 @@
       /\[([^\]\n]+)\]\^\(/,
       /^:::\s+(.+)$/m,
       /^===\s+(.+)$/m,
-      /!audio\[([^\]]+)\]/,
-      /^::::\s+recite[^\n]*\n([^\n]+)/m,
-      /^::::\s+occlusion[^\n]*url="([^"]+)"/m
+      /%%([^%\n]+)%%/
     ].map((pattern) => {
       var _a;
       return (_a = pattern.exec(source)) == null ? void 0 : _a[1];
@@ -549,25 +547,127 @@
   }
 
   // src/shared/anki-field.js
+  var TRANSPORT_BLOCK = /^(?:div|p)$/i;
+  var ANY_TAG = /<(\/?)([a-zA-Z][\w:-]*)\b[^>]*?(\/?)>/g;
+  var AUTHORED_BLOCK = /* @__PURE__ */ new Set([
+    "address",
+    "article",
+    "aside",
+    "audio",
+    "blockquote",
+    "button",
+    "canvas",
+    "caption",
+    "center",
+    "col",
+    "colgroup",
+    "dd",
+    "details",
+    "dialog",
+    "dir",
+    "div",
+    "dl",
+    "dt",
+    "embed",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "hr",
+    "iframe",
+    "input",
+    "legend",
+    "li",
+    "main",
+    "menu",
+    "nav",
+    "object",
+    "ol",
+    "optgroup",
+    "option",
+    "p",
+    "picture",
+    "pre",
+    "script",
+    "section",
+    "select",
+    "style",
+    "summary",
+    "table",
+    "tbody",
+    "td",
+    "template",
+    "textarea",
+    "tfoot",
+    "th",
+    "thead",
+    "tr",
+    "ul",
+    "video"
+  ]);
+  function isEditorTransport(html) {
+    if (!html.includes("<")) return false;
+    let depth = 0;
+    let blocks = 0;
+    let position = 0;
+    let match;
+    ANY_TAG.lastIndex = 0;
+    while ((match = ANY_TAG.exec(html)) !== null) {
+      if (depth === 0 && /\S/.test(html.slice(position, match.index))) return false;
+      position = ANY_TAG.lastIndex;
+      const [, closing, name, selfClosing] = match;
+      const tag = name.toLowerCase();
+      if (depth === 0) {
+        if (!TRANSPORT_BLOCK.test(tag)) return false;
+      } else if (!closing && AUTHORED_BLOCK.has(tag)) {
+        return false;
+      }
+      if (selfClosing || !TRANSPORT_BLOCK.test(tag)) continue;
+      if (closing) {
+        depth -= 1;
+        if (depth < 0) return false;
+      } else {
+        depth += 1;
+        if (depth === 1) blocks += 1;
+      }
+    }
+    if (depth === 0 && /\S/.test(html.slice(position))) return false;
+    return depth === 0 && blocks > 0;
+  }
+  var ANKI_BREAK = "\0";
+  var ANKI_BOUNDARY = "";
+  var TRANSPORT_TAG = /<\/?(?:div|p)\b[^>]*>/gi;
+  var MARKER_RUN = /[\u0000\u0001]+/g;
+  function transportToLineBreaks(html) {
+    return html.replace(/<br\s*\/?>/gi, ANKI_BREAK).replace(TRANSPORT_TAG, ANKI_BOUNDARY).replace(MARKER_RUN, (run) => {
+      const explicit = run.split(ANKI_BREAK).length - 1;
+      const boundaries = run.includes(ANKI_BOUNDARY) ? 1 : 0;
+      return "\n".repeat(Math.min(2, explicit + boundaries));
+    }).replace(/^\n+|\n+$/g, "");
+  }
+  function blockTagsToLineBreaks(html) {
+    return isEditorTransport(html) ? transportToLineBreaks(html) : html.replace(/<br\s*\/?>/gi, "\n");
+  }
   function decodeAnkiFieldHtml(html, documentRef = globalThis.document) {
     var _a;
-    const text = String(html != null ? html : "").replace(/&nbsp;/g, " ").replace(/<br\s*\/?>/gi, "\n");
+    const text = blockTagsToLineBreaks(
+      String(html != null ? html : "").replace(/&nbsp;/g, " ")
+    );
     const decoder = ((_a = documentRef == null ? void 0 : documentRef.createElement) == null ? void 0 : _a.call(documentRef, "textarea")) || null;
     const fallback = () => text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, "&");
     if (!decoder) return fallback();
     decoder.innerHTML = text;
     return typeof decoder.value === "string" ? decoder.value : fallback();
   }
-
-  // node_modules/lucide/dist/esm/icons/audio-lines.mjs
-  var AudioLines = [
-    ["path", { d: "M2 10v3" }],
-    ["path", { d: "M6 6v11" }],
-    ["path", { d: "M10 3v18" }],
-    ["path", { d: "M14 8v7" }],
-    ["path", { d: "M18 5v13" }],
-    ["path", { d: "M22 10v3" }]
-  ];
 
   // node_modules/lucide/dist/esm/icons/badge-alert.mjs
   var BadgeAlert = [
@@ -584,18 +684,6 @@
   // node_modules/lucide/dist/esm/icons/bold.mjs
   var Bold = [
     ["path", { d: "M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" }]
-  ];
-
-  // node_modules/lucide/dist/esm/icons/book-open-check.mjs
-  var BookOpenCheck = [
-    ["path", { d: "M12 5v16" }],
-    ["path", { d: "m16 12 2 2 4-4" }],
-    [
-      "path",
-      {
-        d: "M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344"
-      }
-    ]
   ];
 
   // node_modules/lucide/dist/esm/icons/braces.mjs
@@ -1046,9 +1134,7 @@
     annotation: MessageSquareText,
     collapse: ListCollapse,
     tabs: PanelsTopLeft,
-    audio: AudioLines,
-    recite: BookOpenCheck,
-    occlusion: SquareDashed,
+    mask: SquareDashed,
     preview: ScanEye,
     "status-ok": CircleCheck,
     "status-warning": CircleAlert,
@@ -1224,17 +1310,18 @@
       "annotation",
       "collapse",
       "tabs",
-      "audio",
-      "recite",
-      "occlusion"
+      "mask"
     ]);
     let validationTimer = null;
     let toolbarResizeObserver = null;
     let lastEditor = null;
     let lastFieldIndex = 0;
     let commandContext = null;
+    let noticeTimer = null;
+    let mediaTicket = 0;
     let fieldNameCache = [];
     let shortcutsBound = false;
+    let mediaPasteBound = false;
     let sessionVersion = 0;
     const managedFieldNames = /* @__PURE__ */ new Set(["Front", "Back"]);
     const boundEditors = /* @__PURE__ */ new WeakMap();
@@ -1550,6 +1637,119 @@
       scheduleValidation();
       return true;
     }
+    const MEDIA_MESSAGE_PREFIX = "quizify:media:add:";
+    function showEditorNotice(text, kind = "info") {
+      let notice = document.querySelector(".quizify-editor-notice");
+      if (!notice) {
+        notice = document.createElement("div");
+        notice.className = "quizify-editor-notice";
+        notice.setAttribute("lang", quizifyEditorLocale);
+        notice.setAttribute("role", "status");
+        document.body.appendChild(notice);
+      }
+      notice.textContent = text;
+      notice.dataset.kind = kind;
+      notice.hidden = false;
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => {
+        notice.hidden = true;
+      }, 4e3);
+    }
+    function clearEditorNotice() {
+      var _a;
+      clearTimeout(noticeTimer);
+      noticeTimer = null;
+      const notice = document.querySelector(".quizify-editor-notice");
+      if (!notice) return;
+      notice.hidden = true;
+      (_a = notice.remove) == null ? void 0 : _a.call(notice);
+    }
+    function mediaFileName(file) {
+      const raw = String((file == null ? void 0 : file.name) || "").replace(/[\\/]+/g, "-").trim();
+      if (raw && !/^image\.\w+$/i.test(raw)) return raw.replace(/\s+/g, "-");
+      const type = /^image\/([\w+]+)$/i.exec(String((file == null ? void 0 : file.type) || ""));
+      const extension = ((type == null ? void 0 : type[1]) || "png").toLowerCase().replace(/^jpeg$/, "jpg");
+      return `quizify-paste-${Date.now()}.${extension}`;
+    }
+    function base64Of(buffer) {
+      const bytes = new Uint8Array(buffer);
+      const chunk = 32768;
+      const parts = [];
+      for (let index = 0; index < bytes.length; index += chunk) {
+        parts.push(String.fromCharCode.apply(null, bytes.subarray(index, index + chunk)));
+      }
+      return btoa(parts.join(""));
+    }
+    function imageFromTransfer(transfer) {
+      const files = Array.from((transfer == null ? void 0 : transfer.files) || []);
+      return files.find((file) => /^image\//i.test(String((file == null ? void 0 : file.type) || ""))) || null;
+    }
+    function insertPastedImage(entry, name) {
+      var _a;
+      const editor = (entry == null ? void 0 : entry.editor) || focusedEditor();
+      if (!editor) return false;
+      const snippet = `![](${name})`;
+      if (!replaceEditorSelection(editor, snippet, { start: snippet.length, end: snippet.length })) {
+        return false;
+      }
+      rememberEditor(editor, (_a = entry == null ? void 0 : entry.index) != null ? _a : lastFieldIndex);
+      focusEditor(editor);
+      rememberCommandContext(entry);
+      scheduleValidation();
+      return true;
+    }
+    function handleMediaPaste(event) {
+      var _a, _b;
+      if (!active() || event.defaultPrevented || event.isComposing) return;
+      const file = imageFromTransfer(event.clipboardData);
+      if (!file) return;
+      const entry = fieldEntryForTarget(event.target) || currentFieldEntry();
+      if (!isManagedEntry(entry) || !(entry == null ? void 0 : entry.editor)) return;
+      const bridge = globalThis.pycmd;
+      if (typeof bridge !== "function") {
+        showEditorNotice(t("editor.paste_image_unavailable"), "warning");
+        return;
+      }
+      (_a = event.preventDefault) == null ? void 0 : _a.call(event);
+      (_b = event.stopPropagation) == null ? void 0 : _b.call(event);
+      const ticket = ++mediaTicket;
+      const reader = new FileReader();
+      reader.onerror = () => {
+        if (ticket === mediaTicket) showEditorNotice(t("editor.paste_image_failed"), "error");
+      };
+      reader.onload = () => {
+        let payload;
+        try {
+          payload = JSON.stringify({
+            name: mediaFileName(file),
+            data: base64Of(reader.result)
+          });
+        } catch (error) {
+          showEditorNotice(t("editor.paste_image_failed"), "error");
+          return;
+        }
+        try {
+          bridge(MEDIA_MESSAGE_PREFIX + payload, (response) => {
+            if (ticket !== mediaTicket) return;
+            const name = response && response.name ? String(response.name) : "";
+            if (!name || !insertPastedImage(entry, name)) {
+              showEditorNotice(t("editor.paste_image_failed"), "error");
+              return;
+            }
+            showEditorNotice(t("editor.paste_image_stored", { name }));
+          });
+        } catch (error) {
+          if (ticket === mediaTicket) showEditorNotice(t("editor.paste_image_failed"), "error");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    function bindMediaPaste() {
+      if (mediaPasteBound) return;
+      if (typeof document.addEventListener !== "function") return;
+      document.addEventListener("paste", handleMediaPaste, true);
+      mediaPasteBound = true;
+    }
     function toolbarStatus() {
       return document.querySelector(".quizify-diagnostics-status");
     }
@@ -1720,12 +1920,8 @@
       if (item.kind === "annotation") {
         return t("editor.preview_meta.annotation", { text: meta.text, note: meta.note });
       }
-      if (item.kind === "audio") return `${meta.title} -> ${meta.url}`;
-      if (item.kind === "recite") {
-        return t("editor.preview_meta.recite", { mask: meta.mask, mode: meta.mode });
-      }
-      if (item.kind === "occlusion") {
-        return t("editor.preview_meta.occlusion", { image: meta.image, regions: meta.regions });
+      if (item.kind === "mask") {
+        return t("editor.preview_meta.mask", { text: meta.text });
       }
       if (item.kind === "collapse" || item.kind === "tab") return meta.title;
       return "";
@@ -2129,6 +2325,7 @@
       if (version !== sessionVersion) return false;
       setOption("lineWrapping", true);
       ensureToolbar();
+      bindMediaPaste();
       plainTexts.forEach((input, index) => bindEditor(input, index));
       bindVisibleEditors();
       scheduleValidation();
@@ -2141,6 +2338,7 @@
       stopObservingToolbarResize();
       floatingPanelManager.closeAll();
       document.body.classList.remove("quizify-editor-active");
+      clearEditorNotice();
       const toolbar = document.querySelector(".quizify-toolbar");
       if (toolbar) toolbar.hidden = true;
       updateCommandAvailability(null);
@@ -2161,10 +2359,8 @@
 })();
 /*! Bundled license information:
 
-lucide/dist/esm/icons/audio-lines.mjs:
 lucide/dist/esm/icons/badge-alert.mjs:
 lucide/dist/esm/icons/bold.mjs:
-lucide/dist/esm/icons/book-open-check.mjs:
 lucide/dist/esm/icons/braces.mjs:
 lucide/dist/esm/icons/check.mjs:
 lucide/dist/esm/icons/chevron-down.mjs:

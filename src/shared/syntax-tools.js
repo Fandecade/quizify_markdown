@@ -6,7 +6,6 @@ import {
   maskMarkdownFencedCode,
   maskMarkdownInlineContexts
 } from "./math.js";
-import { parseOcclusionRegion } from "./occlusion.js";
 import { t, tn } from "./i18n.js";
 (function (root, factory) {
   const api = factory();
@@ -22,9 +21,7 @@ import { t, tn } from "./i18n.js";
     [t("editor.snippet.annotation"), t("editor.snippet.annotation.template"), t("editor.placeholder.content")],
     [t("editor.snippet.collapse"), t("editor.snippet.collapse.template"), t("editor.placeholder.title")],
     [t("editor.snippet.tabs"), t("editor.snippet.tabs.template"), t("editor.placeholder.tab_one")],
-    [t("editor.snippet.audio"), t("editor.snippet.audio.template"), t("editor.placeholder.audio_title")],
-    [t("editor.snippet.recite"), t("editor.snippet.recite.template"), t("editor.placeholder.recite_text")],
-    [t("editor.snippet.occlusion"), t("editor.snippet.occlusion.template"), t("editor.placeholder.occlusion")]
+    [t("editor.snippet.mask"), t("editor.snippet.mask.template"), t("editor.placeholder.mask")]
   ];
 
   const markdownActions = [
@@ -289,7 +286,8 @@ import { t, tn } from "./i18n.js";
     const interactivePatterns = [
       /\{\{[\s\S]*?\}\}/g,
       /\[\[[\s\S]*?\]\]/g,
-      /\[(.*?)\]\^\((.*?)\)\^/gs
+      /\[(.*?)\]\^\((.*?)\)\^/gs,
+      /%%[^%\n]+%%/g
     ];
 
     function escapedAt(index) {
@@ -349,11 +347,9 @@ import { t, tn } from "./i18n.js";
         continue;
       }
       if (
-        (labelOpen > 0 &&
-          text[labelOpen - 1] === "!" &&
-          !escapedAt(labelOpen - 1)) ||
-        (text.slice(Math.max(0, labelOpen - 6), labelOpen) === "!audio" &&
-          !escapedAt(labelOpen - 6))
+        labelOpen > 0 &&
+        text[labelOpen - 1] === "!" &&
+        !escapedAt(labelOpen - 1)
       ) {
         continue;
       }
@@ -434,16 +430,24 @@ import { t, tn } from "./i18n.js";
     }
   }
 
-  function analyzeAudio(source, diagnostics, locate) {
-    for (const match of source.matchAll(/!audio\[(.*?)\]\((.*?)\)/g)) {
-      const pos = locate(match.index);
-      if (!match[1].trim()) {
-        diagnostics.push(diagnostic("warning", t("syntax.empty_audio_title"), pos.line, pos.column));
+  function analyzeMasks(source, diagnostics, locate) {
+    const text = String(source || "");
+    const lines = text.split(/\r?\n/);
+
+    lines.forEach((line, index) => {
+      let delimiters = 0;
+      for (const match of line.matchAll(/%%/g)) {
+        let slashes = 0;
+        for (let back = match.index - 1; back >= 0 && line[back] === "\\"; back--) {
+          slashes++;
+        }
+        // An escaped \%% is literal text, not half of a mask delimiter.
+        if (slashes % 2 === 0) delimiters++;
       }
-      if (!match[2].trim()) {
-        diagnostics.push(diagnostic("error", t("syntax.empty_audio_url"), pos.line, pos.column));
+      if (delimiters % 2 === 1) {
+        diagnostics.push(diagnostic("warning", t("syntax.mask_unpaired"), index + 1));
       }
-    }
+    });
   }
 
   function analyzeChoiceBlocks(lines, diagnostics) {
@@ -552,82 +556,6 @@ import { t, tn } from "./i18n.js";
     }
   }
 
-  function analyzeReciteBlocks(lines, diagnostics) {
-    const stack = [];
-    const RECITE_OPTIONS = ["mask", "mode"];
-    const OCCLUSION_OPTIONS = ["url", "image", "src", "alt", "title"];
-
-    lines.forEach((line, idx) => {
-      const lineNo = idx + 1;
-      const trimmed = line.trim();
-      const opener = /^::::\s+([A-Za-z]+)(?:\s+(.*?))?\s*$/.exec(trimmed);
-      if (opener) {
-        const kind = opener[1].toLowerCase();
-        const entry = { line: lineNo, markers: 0, kind };
-        const seen = new Set();
-        String(opener[2] || "").split(/\s+/).filter(Boolean).forEach((part) => {
-          const option = /^([A-Za-z][\w-]*)=(?:\S+)$/.exec(part);
-          if (!option) return;
-          seen.add(option[1].toLowerCase());
-        });
-        if (kind === "recite") {
-          String(opener[2] || "").split(/\s+/).filter(Boolean).forEach((part) => {
-            const option = /^([A-Za-z][\w-]*)=(\S+)$/.exec(part);
-            if (!option) {
-              diagnostics.push(diagnostic("warning", t("syntax.recite_invalid_option", { option: part }), lineNo));
-              return;
-            }
-            const key = option[1].toLowerCase();
-            const value = option[2].toLowerCase();
-            if (key === "mask" && (!/^\d{1,3}$/.test(value) || Number(value) > 100)) {
-              diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mask"), lineNo));
-            } else if (key === "mode" && !["auto", "manual", "mixed"].includes(value)) {
-              diagnostics.push(diagnostic("error", t("syntax.recite_invalid_mode"), lineNo));
-            } else if (!RECITE_OPTIONS.includes(key)) {
-              diagnostics.push(diagnostic("warning", t("syntax.recite_unknown_option", { option: key }), lineNo));
-            }
-          });
-        } else if (kind === "occlusion") {
-          seen.forEach((key) => {
-            if (!OCCLUSION_OPTIONS.includes(key)) {
-              diagnostics.push(diagnostic("warning", t("syntax.occlusion_unknown_option", { option: key }), lineNo));
-            }
-          });
-        } else {
-          diagnostics.push(diagnostic("warning", t("syntax.unknown_container", { keyword: kind }), lineNo));
-        }
-        stack.push(entry);
-        return;
-      }
-
-      if (/^::::\s*$/.test(trimmed)) {
-        if (!stack.length) {
-          diagnostics.push(diagnostic("error", t("syntax.recite_extra_close"), lineNo));
-          return;
-        }
-        const entry = stack.pop();
-        if (entry.kind === "recite" && entry.markers % 2 !== 0) {
-          diagnostics.push(diagnostic("error", t("syntax.recite_unpaired_group"), entry.line));
-        }
-        return;
-      }
-
-      if (stack.length) {
-        const top = stack[stack.length - 1];
-        if (top.kind === "recite") {
-          top.markers += (line.match(/%%/g) || []).length;
-        } else if (top.kind === "occlusion" && /^\s*\d/.test(trimmed) && !parseOcclusionRegion(trimmed)) {
-          diagnostics.push(diagnostic("warning", t("syntax.occlusion_invalid_region"), lineNo));
-        }
-      }
-    });
-
-    stack.forEach((entry) => {
-      const key = entry.kind === "occlusion" ? "syntax.occlusion_missing_close" : "syntax.recite_missing_close";
-      diagnostics.push(diagnostic("error", t(key), entry.line));
-    });
-  }
-
   function analyzeQuizifySyntax(source) {
     const text = String(source || "");
     const protectedText = protectAuthoringSyntax(text);
@@ -638,10 +566,9 @@ import { t, tn } from "./i18n.js";
     analyzeFillBlanks(protectedText, diagnostics, locate);
     analyzeReveal(protectedText, diagnostics, locate);
     analyzeAnnotations(protectedText, diagnostics, locate);
-    analyzeAudio(protectedText, diagnostics, locate);
     analyzeChoiceBlocks(lines, diagnostics);
     analyzeContainers(lines, diagnostics);
-    analyzeReciteBlocks(lines, diagnostics);
+    analyzeMasks(protectedText, diagnostics, locate);
 
     diagnostics.sort((a, b) => a.line - b.line || a.column - b.column);
     return diagnostics;
@@ -665,6 +592,13 @@ import { t, tn } from "./i18n.js";
       items.push(previewItem("fitb", t("editor.snippet.fitb"), pos.line, { answer }, pos.column));
     }
 
+    for (const match of text.matchAll(/%%([^%\n]+)%%/g)) {
+      const pos = locate(match.index);
+      items.push(previewItem("mask", t("editor.snippet.mask"), pos.line, {
+        text: trimPreview(match[1] || t("syntax.preview.empty_text"))
+      }, pos.column));
+    }
+
     for (const match of text.matchAll(/\[\[([\s\S]*?)\]\]/g)) {
       const pos = locate(match.index);
       const [question = "", answer = ""] = match[1].split("||");
@@ -679,14 +613,6 @@ import { t, tn } from "./i18n.js";
       items.push(previewItem("annotation", t("editor.snippet.annotation"), pos.line, {
         text: trimPreview(match[1] || t("syntax.preview.empty_text")),
         note: trimPreview(match[2] || t("syntax.preview.empty_note"))
-      }, pos.column));
-    }
-
-    for (const match of text.matchAll(/!audio\[(.*?)\]\((.*?)\)/g)) {
-      const pos = locate(match.index);
-      items.push(previewItem("audio", t("editor.snippet.audio"), pos.line, {
-        title: trimPreview(match[1] || t("syntax.preview.untitled")),
-        url: trimPreview(match[2] || t("syntax.preview.no_file"))
       }, pos.column));
     }
   }
@@ -732,29 +658,6 @@ import { t, tn } from "./i18n.js";
       if (collapse) {
         items.push(previewItem("collapse", t("editor.snippet.collapse"), lineNo, {
           title: trimPreview(collapse[1])
-        }));
-      }
-
-      const occlusion = /^::::\s+occlusion(?:\s+(.*?))?\s*$/i.exec(line.trim());
-      if (occlusion) {
-        const url = /url\s*=\s*"([^"]+)"/i.exec(occlusion[1] || "");
-        items.push(previewItem("occlusion", t("editor.snippet.occlusion"), lineNo, {
-          image: (url && url[1]) || t("syntax.preview.no_file"),
-          regions: ""
-        }));
-      }
-
-      const recite = /^::::\s+recite(?:\s+(.*?))?\s*$/i.exec(line.trim());
-      if (recite) {
-        const options = Object.fromEntries(
-          String(recite[1] || "")
-            .split(/\s+/)
-            .map((part) => part.split("=", 2))
-            .filter((pair) => pair.length === 2)
-        );
-        items.push(previewItem("recite", t("editor.snippet.recite"), lineNo, {
-          mask: options.mask || "40",
-          mode: options.mode || "mixed"
         }));
       }
 
