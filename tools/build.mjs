@@ -5,15 +5,32 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const KNOWN_ARGS = new Set(["--release", "--webmaker"]);
 const args = new Set(process.argv.slice(2));
-const unknownArgs = [...args].filter((arg) => arg !== "--release");
+const unknownArgs = [...args].filter((arg) => !KNOWN_ARGS.has(arg));
 if (unknownArgs.length) {
   throw new Error(`Unknown build option: ${unknownArgs.join(", ")}`);
 }
 const release = args.has("--release");
+// `--webmaker` builds the standalone offline card maker only; without it the
+// addon bundles are built as usual.
+const webmakerOnly = args.has("--webmaker");
 const addon = path.join(root, "quizify_addon");
 const web = path.join(addon, "web");
 const licenses = path.join(addon, "licenses");
+
+/*
+ * Both deliverables bundle the same runtimes, so both ship the same license
+ * texts.
+ */
+const LICENSE_FILES = [
+  ["marked/LICENSE", "marked-LICENSE.txt"],
+  ["katex/LICENSE", "katex-LICENSE.txt"],
+  ["highlight.js/LICENSE", "highlight.js-LICENSE.txt"],
+  ["dompurify/LICENSE", "DOMPurify-Apache-LICENSE.txt"],
+  ["dompurify/LICENSE-MPL", "DOMPurify-MPL-LICENSE.txt"],
+  ["lucide/LICENSE", "lucide-ISC-LICENSE.txt"]
+];
 
 const WINDOWS_OUTPUT_LOCK = /user-mapped section open|EBUSY|EPERM/i;
 async function buildWithRetry(options) {
@@ -28,23 +45,6 @@ async function buildWithRetry(options) {
     }
   }
   throw new Error("Build retry loop ended unexpectedly");
-}
-
-await mkdir(web, { recursive: true });
-await mkdir(licenses, { recursive: true });
-await copyFile(
-  path.join(root, "THIRD_PARTY_LICENSES.md"),
-  path.join(addon, "THIRD_PARTY_LICENSES.md")
-);
-for (const [source, target] of [
-  ["marked/LICENSE", "marked-LICENSE.txt"],
-  ["katex/LICENSE", "katex-LICENSE.txt"],
-  ["highlight.js/LICENSE", "highlight.js-LICENSE.txt"],
-  ["dompurify/LICENSE", "DOMPurify-Apache-LICENSE.txt"],
-  ["dompurify/LICENSE-MPL", "DOMPurify-MPL-LICENSE.txt"],
-  ["lucide/LICENSE", "lucide-ISC-LICENSE.txt"]
-]) {
-  await copyFile(path.join(root, "node_modules", source), path.join(licenses, target));
 }
 
 const common = {
@@ -70,6 +70,17 @@ const katexWoff2Only = {
     });
   }
 };
+
+if (!webmakerOnly) {
+await mkdir(web, { recursive: true });
+await mkdir(licenses, { recursive: true });
+await copyFile(
+  path.join(root, "THIRD_PARTY_LICENSES.md"),
+  path.join(addon, "THIRD_PARTY_LICENSES.md")
+);
+for (const [source, target] of LICENSE_FILES) {
+  await copyFile(path.join(root, "node_modules", source), path.join(licenses, target));
+}
 
 await buildWithRetry({
   ...common,
@@ -155,3 +166,67 @@ await writeFile(
   `${JSON.stringify({ schema_version: 1, files }, null, 2)}\n`,
   "utf8"
 );
+}
+
+/*
+ * Offline card maker. `file://` blocks ES modules, `fetch` and `@font-face`
+ * requests, so the page ships as a folder of classic scripts plus a stylesheet
+ * whose KaTeX fonts are already inlined as data URLs.
+ */
+if (webmakerOnly) {
+  const maker = path.join(root, "webmaker");
+  await mkdir(maker, { recursive: true });
+
+  await copyFile(
+    path.join(root, "src/webmaker/index.html"),
+    path.join(maker, "index.html")
+  );
+  await copyFile(
+    path.join(root, "THIRD_PARTY_LICENSES.md"),
+    path.join(maker, "THIRD_PARTY_LICENSES.md")
+  );
+  await mkdir(path.join(maker, "licenses"), { recursive: true });
+  for (const [source, target] of LICENSE_FILES) {
+    await copyFile(
+      path.join(root, "node_modules", source),
+      path.join(maker, "licenses", target)
+    );
+  }
+
+  for (const [entry, outfile, extra] of [
+    ["src/webmaker/app.js", "app.js", {}],
+    ["src/webmaker/preview-entry.js", "quizify-preview.js", {}],
+    [
+      "src/shared/syntax-tools.js",
+      "syntax-tools.js",
+      {
+        footer: {
+          js: "if (typeof module === 'object' && module.exports) module.exports = globalThis.QuizifySyntax;"
+        }
+      }
+    ],
+    ["src/shared/i18n-catalogs.js", "quizify-i18n.js", {}]
+  ]) {
+    await buildWithRetry({
+      ...common,
+      entryPoints: [path.join(root, entry)],
+      outfile: path.join(maker, outfile),
+      format: "iife",
+      ...extra
+    });
+  }
+
+  await buildWithRetry({
+    ...common,
+    entryPoints: [path.join(root, "src/webmaker/app.css")],
+    outfile: path.join(maker, "app.css")
+  });
+
+  await buildWithRetry({
+    ...common,
+    entryPoints: [path.join(root, "src/review/bundle.css")],
+    outfile: path.join(maker, "quizify-preview.css"),
+    loader: { ".woff2": "dataurl", ".woff": "dataurl", ".ttf": "dataurl" },
+    plugins: [katexWoff2Only]
+  });
+}

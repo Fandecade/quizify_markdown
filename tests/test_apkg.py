@@ -64,6 +64,9 @@ class ApkgBuilderTest(unittest.TestCase):
         for marker in (";;;", "{{", "$$", "```", ":::", "===", "[[", "> "):
             self.assertIn(marker, combined, marker)
         self.assertIn("%%面向连接%%", combined)
+        # Masks cover rich inline content, so the sample has to show it.
+        self.assertIn("%%`npm install`%%", combined)
+        self.assertIn("%%**先建连接，再传数据**%%", combined)
         self.assertIn("_quizify-sample.png", combined)
 
     def test_sample_deck_ships_the_media_every_card_references(self):

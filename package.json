@@ -1,16 +1,18 @@
 {
   "name": "anki-quizify",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "private": true,
   "license": "AGPL-3.0-or-later",
+  "description": "Anki Quizify 的修改版：文字遮盖 %%文字%%、离线网页制卡台、.apkg 示例牌组（基于 e-chehil/anki-quizify）",
   "type": "module",
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
   },
   "scripts": {
-    "build": "node tools/build.mjs",
+    "build": "node tools/build.mjs && node tools/build.mjs --webmaker",
     "build:release": "node tools/build.mjs --release",
     "build:apkg": "python3 tools/build_apkg.py",
+    "build:webmaker": "node tools/build.mjs --webmaker",
     "test:js": "node --import ./tests-js/setup.mjs --test tests-js/*.test.mjs && node tools/run-legacy-tests.mjs",
     "test:py": "python tools/check_test_layout.py && python -m unittest discover -s tests -p \"test_*.py\"",
     "test:release": "node --test tests-js/mobile-first-paint.test.mjs tests-js/package-contract.test.mjs tests-js/rendering.test.mjs tests-js/release-build.release.mjs",
@@ -18,15 +20,15 @@
     "package": "npm test && npm run build:release && npm run test:release && npm run test:py && python tools/build_addon.py",
     "package:apkg": "python3 tools/build_apkg.py"
   },
+  "devDependencies": {
+    "esbuild": "0.28.1",
+    "jsdom": "29.1.1"
+  },
   "dependencies": {
     "dompurify": "3.4.12",
     "highlight.js": "11.11.1",
     "katex": "0.16.40",
     "lucide": "1.27.0",
     "marked": "18.0.6"
-  },
-  "devDependencies": {
-    "esbuild": "0.28.1",
-    "jsdom": "29.1.1"
   }
 }

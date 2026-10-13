@@ -424,5 +424,6 @@
   "editor.snippet.mask.template": "%%text to hide%%",
   "editor.placeholder.mask": "text to hide",
   "editor.preview_meta.mask": "Masked: {text}",
-  "syntax.mask_unpaired": "Unpaired %% marker; a text mask needs a closing %%."
+  "syntax.mask_unpaired": "Unpaired %% marker; a text mask needs a closing %% on the same line.",
+  "syntax.mask_cross_line": "A text mask cannot span lines; keep %%...%% on one line or split it into several masks."
 }

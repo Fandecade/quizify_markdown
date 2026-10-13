@@ -3,6 +3,5 @@ node_modules/
 *.py[cod]
 *.building
 quizify_addon/user_files/assets/
-dist/
 tools/apkg_assets/*.building
 .DS_Store

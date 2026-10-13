@@ -401,5 +401,6 @@
   "editor.snippet.mask.template": "%%要遮盖的文字%%",
   "editor.placeholder.mask": "要遮盖的文字",
   "editor.preview_meta.mask": "遮盖文字：{text}",
-  "syntax.mask_unpaired": "遮盖标记 %% 没有配对，不会生效。"
+  "syntax.mask_unpaired": "遮盖标记 %% 没有配对，不会生效（遮盖必须写在同一行）。",
+  "syntax.mask_cross_line": "遮盖 %% 不能跨行，请把文字放在同一行，或拆成多个 %%…%%。"
 }

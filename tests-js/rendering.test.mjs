@@ -134,6 +134,34 @@ test("masked text keeps its markup and stays inert after sanitization", () => {
   assert.doesNotMatch(html, /onload|<script/i);
 });
 
+test("a mask can cover rich inline content, not just plain text", () => {
+  const dom = runtime();
+  const html = dom.window.Quizify.renderMarkdown(
+    "运行 %%`npm run build`%% 即可。\n\n" +
+      "重点是 %%**增量同步**%% 与 %%[协议文档](https://example.com)%%。\n\n" +
+      "公式 %%$x^2$%% 和高亮 %%==标记==%%。"
+  );
+  const fragment = JSDOM.fragment(html);
+  const masks = Array.from(fragment.querySelectorAll(".quizify-mask-text"));
+  assert.equal(masks.length, 5);
+
+  const texts = masks.map((mask) => mask.textContent);
+  assert.deepEqual(texts, [
+    "npm run build",
+    "增量同步",
+    "协议文档",
+    "x^2",
+    "标记"
+  ]);
+  // The inner markup has to survive inside the cover, because the stylesheet
+  // hides it by paint and restores it on reveal.
+  assert(masks[0].querySelector("code"));
+  assert(masks[1].querySelector("strong"));
+  assert(masks[2].querySelector("a[href='https://example.com']"));
+  assert(masks[3].querySelector(".quizify-math"));
+  assert(masks[4].querySelector("mark"));
+});
+
 test("interactive review extensions expose SVG icons and disclosure semantics", () => {
   const dom = runtime();
   const html = dom.window.Quizify.renderMarkdown(

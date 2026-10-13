@@ -2806,6 +2806,32 @@ body[data-quizify-theme="gezhi"] {
   transition: background-color var(--q-transition), box-shadow var(--q-transition);
 }
 
+/*
+ * A covered mask has to hide rich inline content as well: inline code, bold,
+ * links and highlights each paint their own colour or background, so making
+ * the wrapper transparent alone would leave `%%`npm run build`%%` visible.
+ * Only paint is removed — no display/visibility change on the text itself —
+ * so revealing a phrase never reflows the line.
+ */
+.quizify-mask:not(.revealed) .quizify-mask-text,
+.quizify-mask:not(.revealed) .quizify-mask-text * {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: transparent !important;
+  text-decoration-color: transparent !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.quizify-mask:not(.revealed) .quizify-mask-text img,
+.quizify-mask:not(.revealed) .quizify-mask-text picture,
+.quizify-mask:not(.revealed) .quizify-mask-text video,
+.quizify-mask:not(.revealed) .quizify-mask-text canvas,
+.quizify-mask:not(.revealed) .quizify-mask-text svg {
+  visibility: hidden;
+}
+
 .quizify-mask-text {
   color: inherit;
   text-shadow: none;

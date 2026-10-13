@@ -433,6 +433,7 @@ import { t, tn } from "./i18n.js";
   function analyzeMasks(source, diagnostics, locate) {
     const text = String(source || "");
     const lines = text.split(/\r?\n/);
+    const unpaired = [];
 
     lines.forEach((line, index) => {
       let delimiters = 0;
@@ -444,10 +445,29 @@ import { t, tn } from "./i18n.js";
         // An escaped \%% is literal text, not half of a mask delimiter.
         if (slashes % 2 === 0) delimiters++;
       }
-      if (delimiters % 2 === 1) {
-        diagnostics.push(diagnostic("warning", t("syntax.mask_unpaired"), index + 1));
-      }
+      if (delimiters % 2 === 1) unpaired.push(index);
     });
+
+    // A mask that opens on one line and closes on the next leaves both lines
+    // odd. Saying "unpaired" there sends the author hunting for a missing %%
+    // when the real fix is to keep %%…%% on a single line.
+    const spanning = new Set();
+    for (let index = 0; index + 1 < unpaired.length; index++) {
+      if (unpaired[index + 1] === unpaired[index] + 1) {
+        spanning.add(unpaired[index]);
+        spanning.add(unpaired[index + 1]);
+      }
+    }
+
+    for (const index of unpaired) {
+      diagnostics.push(
+        diagnostic(
+          "warning",
+          t(spanning.has(index) ? "syntax.mask_cross_line" : "syntax.mask_unpaired"),
+          index + 1
+        )
+      );
+    }
   }
 
   function analyzeChoiceBlocks(lines, diagnostics) {

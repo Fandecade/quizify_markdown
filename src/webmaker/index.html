@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#147d72" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Quizify 制卡台" />
+    <title>Quizify 制卡台</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-bar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">Q</span>
+          <span class="brand-text">
+            <span class="brand-name">Quizify 制卡台</span>
+            <span class="brand-hint">离线 · 导出 CSV 直导 Anki</span>
+          </span>
+        </div>
+        <label class="field-label">
+          牌组
+          <input id="deck-input" class="text-input" type="text" spellcheck="false" />
+        </label>
+        <label class="field-label">
+          全局标签
+          <input
+            id="global-tags-input"
+            class="text-input"
+            type="text"
+            spellcheck="false"
+            placeholder="空格分隔"
+          />
+        </label>
+        <span class="spacer"></span>
+        <span id="save-state" class="save-state" data-state="idle">就绪</span>
+        <button id="btn-shortcuts" class="button ghost" type="button">快捷键</button>
+        <button id="btn-import" class="button ghost" type="button">导入</button>
+        <button id="btn-export" class="button primary" type="button">导出 CSV</button>
+      </header>
+
+      <main class="workspace" id="workspace" data-pane="editor">
+        <aside class="pane pane-list">
+          <div class="pane-head">
+            <h2 class="pane-title">
+              卡片 <span id="card-count" class="count">1</span>
+            </h2>
+            <button id="btn-new-card" class="button tiny" type="button">＋ 新建</button>
+            <button
+              id="btn-clear-cards"
+              class="button tiny ghost"
+              type="button"
+              title="删除全部卡片，只保留一张空白卡"
+            >
+              清空
+            </button>
+          </div>
+          <input
+            id="card-search"
+            class="text-input"
+            type="search"
+            placeholder="搜索正面 / 背面"
+          />
+          <ol id="card-list" class="card-list"></ol>
+        </aside>
+
+        <section class="pane pane-editor">
+          <div id="toolbar" class="toolbar"></div>
+          <div class="editor-fields">
+            <div class="editor-field">
+              <div class="editor-field-head">
+                <span class="field-name">正面 <code>Front</code></span>
+                <span class="field-keys">Alt+1</span>
+              </div>
+              <textarea
+                id="field-front"
+                class="field-input"
+                data-field="front"
+                spellcheck="false"
+              ></textarea>
+            </div>
+            <div class="editor-field">
+              <div class="editor-field-head">
+                <span class="field-name">背面 <code>Back</code></span>
+                <span class="field-keys">Alt+2</span>
+              </div>
+              <textarea
+                id="field-back"
+                class="field-input"
+                data-field="back"
+                spellcheck="false"
+              ></textarea>
+            </div>
+            <div class="editor-field editor-field-inline">
+              <div class="editor-field-head">
+                <span class="field-name">本卡标签</span>
+                <span class="field-keys">Alt+3</span>
+              </div>
+              <input
+                id="card-tags"
+                class="text-input"
+                type="text"
+                spellcheck="false"
+                placeholder="空格分隔，可留空"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="pane pane-preview">
+          <div class="pane-head">
+            <h2 class="pane-title">预览</h2>
+            <div class="segmented" id="preview-side">
+              <button type="button" class="segment" data-side="front">正面</button>
+              <button type="button" class="segment" data-side="back">背面</button>
+            </div>
+            <div class="segmented" id="preview-width">
+              <button type="button" class="segment" data-width="auto">自适应</button>
+              <button type="button" class="segment" data-width="phone">手机</button>
+            </div>
+            <button id="btn-theme" class="button ghost" type="button">开务</button>
+            <button id="btn-night" class="button ghost" type="button" title="明暗切换">☀</button>
+          </div>
+          <div class="preview-frame" id="preview-frame">
+            <div id="preview-host" class="preview-host"></div>
+          </div>
+          <div class="pane-foot">
+            <button id="btn-preview-reset" class="button tiny" type="button">复位交互</button>
+            <button id="btn-preview-reveal" class="button tiny" type="button">全部揭示</button>
+          </div>
+        </section>
+      </main>
+
+      <nav class="pane-tabs" aria-label="切换面板">
+        <button class="pane-tab" type="button" data-pane="list" aria-current="false">
+          卡片<span id="pane-tab-count" class="pane-tab-count">1</span>
+        </button>
+        <button class="pane-tab" type="button" data-pane="editor" aria-current="true">
+          编辑
+        </button>
+        <button class="pane-tab" type="button" data-pane="preview" aria-current="false">
+          预览
+        </button>
+      </nav>
+
+      <footer class="status-bar">
+        <span id="diagnostics-summary" class="status-item" data-state="ok">诊断通过</span>
+        <span id="structure-summary" class="status-item"></span>
+        <span id="byte-summary" class="status-item"></span>
+        <span class="spacer"></span>
+        <button id="btn-undo" class="button tiny ghost" type="button" hidden>撤销删除</button>
+        <span id="shortcut-hint" class="status-item status-hint"></span>
+      </footer>
+    </div>
+
+    <dialog id="modal-shortcuts" class="modal">
+      <form method="dialog" class="modal-form">
+        <header class="modal-head">
+          <h2>命令与快捷键</h2>
+          <button class="button tiny" type="submit">关闭</button>
+        </header>
+        <input
+          id="shortcut-filter"
+          class="text-input"
+          type="search"
+          spellcheck="false"
+          placeholder="筛选命令，回车执行第一条…"
+        />
+        <div id="shortcut-groups" class="shortcut-groups"></div>
+      </form>
+    </dialog>
+
+    <dialog id="modal-import" class="modal">
+      <form method="dialog" class="modal-form">
+        <header class="modal-head">
+          <h2>导入</h2>
+          <button class="button tiny" type="submit">关闭</button>
+        </header>
+        <p class="modal-hint">
+          粘贴 CSV 或本工具的工程 JSON；也可以直接选择文件。CSV 的
+          <code>&lt;br&gt;</code> 与实体转义会自动还原成换行。
+        </p>
+        <textarea
+          id="import-text"
+          class="field-input import-input"
+          spellcheck="false"
+          placeholder="在此粘贴 CSV 或 JSON…"
+        ></textarea>
+        <div class="modal-actions">
+          <button id="btn-pick-file" class="button ghost" type="button">选择文件…</button>
+          <span class="spacer"></span>
+          <button id="btn-import-append" class="button ghost" type="button">追加到现有卡片</button>
+          <button id="btn-import-replace" class="button primary" type="button">
+            替换全部卡片
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <input
+      id="file-input"
+      type="file"
+      accept=".csv,.json,text/csv,application/json"
+      hidden
+    />
+    <div id="toast" class="toast" role="status" hidden></div>
+
+    <script>
+      globalThis.quizifyLocale = "zh-CN";
+    </script>
+    <script src="quizify-i18n.js"></script>
+    <script src="syntax-tools.js"></script>
+    <script src="quizify-preview.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

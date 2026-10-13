@@ -76,7 +76,7 @@ function boot({ side = "front" } = {}) {
 }
 
 const api = {
-  version: "2.1.1",
+  version: "2.1.2",
   boot,
   destroy,
   enhanceOutlineLists,

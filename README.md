@@ -2,17 +2,55 @@
 
 # Anki Quizify
 
+> **本仓库是 [e-chehil/anki-quizify](https://github.com/e-chehil/anki-quizify) 的修改版（fork）。**
+> 在上游基础上**新增**了文字遮盖 `%%文字%%`、离线网页制卡台 `webmaker/`、`.apkg` 示例牌组、
+> 内容寻址的卡片运行时文件名等，并**删除**了图片遮挡、音频播放器与随机遮罩背诵三种题型。
+> 完整清单见 [来源与改动](#本仓库的来源与改动) 与 [`NOTICE.md`](NOTICE.md)。
+
 Anki Quizify 是一个 Anki 加载项和卡片模板项目。它让你在 Anki 的 `Front` / `Back` 字段里直接写 Markdown，并在复习卡片中渲染为交互式题型，例如填空、单选、多选、折叠块、标签页、批注、揭示答案、文字遮盖、代码高亮和 KaTeX 数学公式。
 
 当前主线实现位于 `quizify_addon/`。仓库根目录的旧模板和资源已经退役：`front.html` / `back.html` 只保留失败关闭的迁移提示，旧 `_myquizify.js` / `_styles.css` 已从仓库删除；实际加载项只使用 `quizify_addon/templates/`、`quizify_addon/_quizify.js` 和 `quizify_addon/_quizify.css`。
 
-当前版本为 **2.1.1**。
+当前版本为 **2.1.2**。
 
 本版修复了一个只影响多端升级的问题：Anki 导入 `.apkg` 与 AnkiWeb 媒体同步都不会覆盖已存在的同名媒体文件，于是旧版本留在手机 / 平板上的 `_quizify.js`、`_quizify.css` 永远不会被替换，卡片里只显示原始的 `%%文字%%`。现在卡片运行时的文件名由自身内容哈希决定（例如 `_quizify.db35b34de1.js`），每次发布都会以设备上从未出现过的新文件名随包分发，导入或同步时必定写入，升级不再需要手动清理媒体库。
 
 2.1.0 版做了一次收敛：移除**图片遮挡**、**音频播放器**和**随机遮罩背诵**三种题型，改用更轻量的**文字遮盖**——在正文里写 `%%文字%%` 就会生成一个绿色遮盖块，点一下揭示、再点一下重新盖上。每个遮盖块独立开合，同一张卡里可以放任意多个，也支持 Tab 聚焦后按 Enter / 空格切换。因为删除了题型入口，桌面端不再有「图片遮挡：生成坐标…」菜单，编辑器工具栏、语法诊断、结构预览与示例牌组也同步清理；导出 `.apkg` 时不再附带遮挡底图与示例音频。上一版针对 AnkiDroid 首帧闪烁、暗色画布与渲染就绪门控的修复，以及编辑器题型按钮保留选区的行为继续保留。
 
 面向用户的发布说明可见 [`docs/release-description.md`](docs/release-description.md)。
+
+## 本仓库的来源与改动
+
+本仓库派生自 **[e-chehil/anki-quizify](https://github.com/e-chehil/anki-quizify)**，沿用
+[`AGPL-3.0-or-later`](LICENSE)，上游源码版权归 Copyright © 2024-2026 e-chehil 所有。
+修改后的完整源码在本仓库公开。逐条差异如下（详细版见 [`NOTICE.md`](NOTICE.md)）：
+
+**新增**
+
+- **文字遮盖 `%%文字%%`**：绿色遮盖块，点一下揭示、再点一下重新盖上；同卡内多个遮盖块互不影响，
+  遮盖里放行内代码、加粗、链接、高亮、行内公式也能真正盖住。
+- **离线网页制卡台 `webmaker/`**：双击 `index.html` 即用，三栏联动 + 实时预览、快捷键与命令面板、
+  CSV 导入导出、自动保存、搜索、逐张删除与清空、拖拽排序，并适配手机与平板（窄屏单栏 + 底部页签）。
+- **`.apkg` 示例牌组**：`tools/build_apkg.py` 生成 18 张示例卡，导入手机即可自测。
+- **内容寻址的卡片运行时文件名**：`_quizify.<hash>.js` / `.css` 等。Anki 导入 `.apkg` 和
+  AnkiWeb 媒体同步都不会覆盖同名媒体，固定文件名会让手机 / 平板永远停在旧运行时。
+- **图片直接粘贴进媒体库**、「导入图片到媒体库…」菜单、移动端多行语法解析修复。
+- `image-occlusion-template/`：另一项独立改造，基于
+  [Sunrongguo2008/anki-image-occlusion-template](https://github.com/Sunrongguo2008/anki-image-occlusion-template)，
+  改为 Quizify 主题 + 绿色遮挡 + 平板遮罩漂移修复。
+
+**删除**
+
+- 图片遮挡题型（`:::: occlusion … ::::` 语法、运行时、坐标工具页面与桌面端菜单）。
+- 音频播放器（`!audio[标题](文件名.mp3)` 及播放 / 变速 / 循环控件）。
+- 随机遮罩背诵（`:::: recite … ::::`）。
+- 编辑器工具栏题型按钮由 9 个收敛为 7 个（其中新增「文字遮盖」）。
+
+**修改**
+
+- 遮盖块外观改为绿色，随主题与深色模式调整；`%%` 诊断改为检查是否成对、是否跨行。
+- 示例牌组重建为 18 张，示例卡不再包含遮挡 / 音频 / 背诵。
+- 上游 1.2.2 及之前的全部修复继续保留。
 
 ## 功能概览
 
@@ -70,10 +108,15 @@ Anki Quizify 是一个 Anki 加载项和卡片模板项目。它让你在 Anki �
 ├── src/
 │   ├── shared/                  # 复习端与编辑器共用的语法结构工具
 │   ├── review/                  # Markdown 解析、运行时模块与生命周期编排
-│   └── editor/                  # Anki 编辑器适配、工具栏与隔离预览
+│   ├── editor/                  # Anki 编辑器适配、工具栏与隔离预览
+│   └── webmaker/                # 离线制卡台源码（三栏网页编辑器）
+├── webmaker/                    # 离线制卡台的构建产物，双击 index.html 即可使用
+├── dist/                        # 打包产物：.apkg 示例牌组（当前版本 + 历史版本）
+├── NOTICE.md                    # 来源、许可与相对上游的新增 / 删除 / 修改说明
 ├── tests/                       # 兼容性 JavaScript 测试和 Python 单元测试
 ├── tests-js/                    # Node test + jsdom 集成测试
 ├── docs/refactor-plan.md        # 重构计划和架构背景
+├── docs/webmaker-guide.md       # 离线制卡台使用说明与快捷键表
 ├── docs/visual-preview.html     # Markdown 与全部题型的视觉组件展厅
 └── docs/workbench-preview.html  # 配置面板与编辑器工作台视觉预览
 ```
@@ -119,6 +162,26 @@ python tools/build_apkg.py --out dist/quizify_markdown.apkg
 1.0 的所有复习依赖均包含在 `.ankiaddon` 中，不再使用 CDN，也不需要首启下载。构建脚本仅保留 KaTeX 的 WOFF2 字体，并为每个媒体文件生成大小和 SHA-256；插件同步前会验证清单，损坏文件不会写入媒体库。
 
 设置窗口中的“校验并重新同步媒体”可用于修复当前资料的媒体副本。升级不会自动删除旧版 `_marked*`、`_katex*` 等通用文件，以免影响其他卡片模板。
+
+## 离线制卡台（网页版）
+
+`webmaker/` 是一个**双击即用、不需要安装、不需要联网**的制卡页面：左栏卡片列表、
+中栏写 `Front` / `Back`、右栏实时预览，写完导出 CSV 直接导入 Anki。它只做一件事
+——把 Quizify Markdown 写对，所以不需要图片，也刻意不含图片遮挡 / 音频 / 随机遮盖
+这些无法随纯文本同步的功能。
+
+```bash
+npm run build:webmaker
+```
+
+然后双击 `webmaker/index.html`（`file://` 打开，构建产物全部是经典脚本、
+KaTeX 字体已内嵌成 data URL，运行时不发起任何请求）。快捷键与 Anki 内编辑器对齐：
+`Mod+Alt+1..7` 依次插入填空 / 选择 / 揭示 / 批注 / 折叠 / 标签页 / 文字遮盖，
+`Mod+/` 打开可点击、可搜索的完整命令表。
+
+导出文件带 `#notetype` / `#deck` / `#guid column` / `#if matches`，导入时自动选中
+笔记类型与牌组，**重复导入同一份文件只更新卡片、不产生重复**。
+完整说明与快捷键总表见 [`docs/webmaker-guide.md`](docs/webmaker-guide.md)。
 
 ## 基本用法
 
@@ -450,10 +513,16 @@ npm test
 npm run package
 ```
 
-生成便于调试的可读前端产物：
+生成便于调试的可读前端产物（加载项资源 + `webmaker/` 制卡台）：
 
 ```powershell
 npm run build
+```
+
+只重新生成离线制卡台：
+
+```powershell
+npm run build:webmaker
 ```
 
 生成用于发布的最小化前端产物：
@@ -511,11 +580,15 @@ GitHub Actions 会在 Node 20.19、22.13、24 以及 Windows/Linux 打包路径�
 
 ## 下载
 
-[下载 Quizify Markdown Anki 插件（`.ankiaddon`）](https://raw.githubusercontent.com/e-chehil/anki-quizify/main/quizify_addon/quizify_markdown.ankiaddon)
+- [下载 Quizify Markdown Anki 插件（`.ankiaddon`）](quizify_addon/quizify_markdown.ankiaddon)
+- [下载示例牌组（`.apkg`）](dist/quizify_markdown.apkg)
+- [打开离线网页制卡台（`webmaker/index.html`）](webmaker/index.html) —— 下载仓库后双击打开即可
 
-欢迎反馈使用中遇到的问题或改进建议，您可以前往 [GitHub Issues](https://github.com/e-chehil/anki-quizify/issues/new) 提交 Issue。
+> 上游项目：[e-chehil/anki-quizify](https://github.com/e-chehil/anki-quizify)（本仓库的修改对象）。
 
-如果您喜欢我的作品，可以通过以下方式予以支持：
+欢迎反馈使用中遇到的问题或改进建议，可以前往本仓库的 Issues 提交。
+
+以下支持方式沿用上游项目 e-chehil 的说明：
 
 - 在 GitHub 上为该项目**加注星标**
 - **微信赞赏**

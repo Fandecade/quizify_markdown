@@ -36,6 +36,25 @@ test("syntax diagnostics preserve CRLF line and column positions", () => {
   assert.equal(preview.find((item) => item.kind === "mask").line, 3);
 });
 
+test("a mask split across two lines is reported as cross-line, not as a missing close", () => {
+  const spanning = syntax.analyzeQuizifySyntax("遮盖 %%前半段\n后半段%% 结束。");
+  assert.equal(spanning.length, 2);
+  assert(spanning.every((item) => item.message.includes("不能跨行")));
+  assert.deepEqual(spanning.map((item) => item.line), [1, 2]);
+
+  // A single unclosed marker keeps the unpaired wording and mentions the
+  // one-line rule, which is also what a wrapped code fence needs to hear.
+  const single = syntax.analyzeQuizifySyntax("正文 %%没有配对的遮盖");
+  assert.equal(single.length, 1);
+  assert.match(single[0].message, /没有配对/);
+  assert.match(single[0].message, /同一行/);
+
+  // An unclosed marker must not blame a valid mask on the next line.
+  const mixed = syntax.analyzeQuizifySyntax("正文 %%没有配对\n%%配对成功%% 的遮盖");
+  assert.deepEqual(mixed.map((item) => item.line), [1]);
+  assert.match(mixed[0].message, /没有配对/);
+});
+
 test("syntax diagnostics avoid repeated full-prefix scans on large fields", () => {
   const lineCount = 20_000;
   const source = Array.from(
