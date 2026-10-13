@@ -587,10 +587,3 @@ GitHub Actions 会在 Node 20.19、22.13、24 以及 Windows/Linux 打包路径�
 > 上游项目：[e-chehil/anki-quizify](https://github.com/e-chehil/anki-quizify)（本仓库的修改对象）。
 
 欢迎反馈使用中遇到的问题或改进建议，可以前往本仓库的 Issues 提交。
-
-以下支持方式沿用上游项目 e-chehil 的说明：
-
-- 在 GitHub 上为该项目**加注星标**
-- **微信赞赏**
-
-  <img src="https://github.com/user-attachments/assets/5d91de4c-8713-41ed-98e3-b53dd4562f30" width="400px" />
