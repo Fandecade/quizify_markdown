@@ -168,10 +168,11 @@
                     return 1;
                 }
 
-                const viewportSize = getImageViewportSize();
-                const widthScale = viewportSize.width / naturalImageWidth;
-                const heightScale = viewportSize.height / naturalImageHeight;
-                const calculatedScale = Math.min(widthScale, heightScale);
+                // 与正面一致：只按可用宽度适配，图片铺满卡片宽度后整张显示。
+                const calculatedScale = Math.min(
+                    Math.max(40, getImageViewportSize().width) / naturalImageWidth,
+                    2
+                );
 
                 if (!Number.isFinite(calculatedScale) || calculatedScale <= 0) {
                     return 1;
@@ -188,6 +189,7 @@
                 const targetScale = Math.max(0.01, baseFitScale * userZoomFactor);
                 img.style.width = Math.max(1, naturalImageWidth * targetScale) + 'px';
                 img.style.height = Math.max(1, naturalImageHeight * targetScale) + 'px';
+                syncTouchAction();
             }
 
             // How many visual pixels one layout pixel occupies. The picture is
@@ -252,6 +254,34 @@
                 applyImagePan();
                 clampImagePan();
                 applyImagePan();
+            }
+
+            // 图片是否已经大到无法完整显示（只有放大后才可能出现）。
+            // 只比较宽高：translate 平移不影响宽高，页面缩放对两个盒子一致。
+            function imageOverflowsViewport() {
+                if (!mainImageContainer || !imgContainer) {
+                    return false;
+                }
+                const viewportRect = mainImageContainer.getBoundingClientRect();
+                const imageRect = imgContainer.getBoundingClientRect();
+                return imageRect.width > viewportRect.width + 1 ||
+                    imageRect.height > viewportRect.height + 1;
+            }
+
+            // 图片完整可见时没有东西可平移，就把手势还给浏览器
+            // （touch-action: pan-y），这样手指按在图片上也能上下滑动整页；
+            // 放大到超出可视区后才接管为平移/捏合（touch-action: none）。
+            function syncTouchAction() {
+                const action = imageOverflowsViewport() ? 'none' : 'pan-y';
+                const targets = [mainImageContainer, imgContainer, img];
+                if (imgContainer) {
+                    targets.push(...imgContainer.querySelectorAll('.mask-rect'));
+                }
+                targets.forEach((el) => {
+                    if (el) {
+                        el.style.touchAction = action;
+                    }
+                });
             }
 
             function handleImageResize() {
@@ -353,6 +383,11 @@
 
                     if (e.touches.length === 1) {
                         isTouchPinchingImage = false;
+                        if (!imageOverflowsViewport()) {
+                            // 图片完整可见，没有可平移的余量：交给浏览器滚动页面
+                            isTouchPanningImage = false;
+                            return;
+                        }
                         isTouchPanningImage = true;
                         touchPanStartX = e.touches[0].clientX;
                         touchPanStartY = e.touches[0].clientY;
@@ -376,6 +411,10 @@
                     }
 
                     if (isTouchPanningImage && e.touches.length === 1) {
+                        if (!imageOverflowsViewport()) {
+                            isTouchPanningImage = false;
+                            return;
+                        }
                         imagePanX = touchPanOriginX + (e.touches[0].clientX - touchPanStartX);
                         imagePanY = touchPanOriginY + (e.touches[0].clientY - touchPanStartY);
                         syncImagePan();

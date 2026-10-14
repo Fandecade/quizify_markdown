@@ -19,6 +19,7 @@ Requirements::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import sys
@@ -114,6 +115,9 @@ def build_collection(col, with_samples: bool) -> None:
     note_type = models.by_name(NOTE_TYPE_NAME)
     for image, coordinates, question, answer, note in samples():
         note_obj = col.new_note(note_type)
+        # 固定 guid：重新导入同一张示例卡时是**更新**而不是再插一张，
+        # 否则每导一次 apkg 示例牌组就多两张重复卡。
+        note_obj.guid = hashlib.sha1(f"quizify-{image}".encode()).hexdigest()[:10]
         note_obj["Question"] = question
         note_obj["Image"] = f'<img src="{image}">'
         note_obj["Opinions"] = coordinates
