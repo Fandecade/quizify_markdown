@@ -134,6 +134,59 @@ test("masked text keeps its markup and stays inert after sanitization", () => {
   assert.doesNotMatch(html, /onload|<script/i);
 });
 
+test("the answer side starts with every mask revealed but still toggleable", () => {
+  const config = JSON.stringify({
+    schema_version: 1,
+    review: { cardless: false, floating_control: false },
+    platform: { ankidroid_api: true }
+  });
+  const body =
+    `<script type="application/json" id="quizify-config">${config}</script>` +
+    '<main id="note-container">' +
+    '<section id="front" class="quizify-field quizify-question-context"></section>' +
+    '<section id="back" class="quizify-field quizify-answer-content"></section>' +
+    "</main>";
+  const source = "TCP 是一种 %%面向连接%%、可靠的 %%传输层协议%% 的协议。";
+
+  const back = runtime(body);
+  back.window.document.getElementById("front").textContent = source;
+  back.window.document.getElementById("back").textContent = "答案在这里。";
+  back.window.Quizify.boot({ side: "back" });
+  const backMasks = () =>
+    Array.from(back.window.document.querySelectorAll(".quizify-mask"));
+  assert.equal(backMasks().length, 2);
+  assert.equal(
+    backMasks().filter((mask) => mask.classList.contains("revealed")).length,
+    2,
+    "every mask on the answer side must start revealed"
+  );
+  assert.equal(backMasks()[0].getAttribute("aria-expanded"), "true");
+
+  // Covering one again still works, and it only touches that mask.
+  backMasks()[0].dispatchEvent(
+    new back.window.MouseEvent("click", { bubbles: true, cancelable: true })
+  );
+  assert.equal(backMasks()[0].classList.contains("revealed"), false);
+  assert.equal(backMasks()[0].getAttribute("aria-expanded"), "false");
+  assert.equal(backMasks()[1].classList.contains("revealed"), true);
+
+  // The question side is still covered by default.
+  const front = runtime(body);
+  front.window.document.getElementById("front").textContent = source;
+  front.window.Quizify.boot({ side: "front" });
+  const frontMasks = Array.from(
+    front.window.document.querySelectorAll(".quizify-mask")
+  );
+  assert.equal(frontMasks.length, 2);
+  assert.equal(
+    frontMasks.filter((mask) => mask.classList.contains("revealed")).length,
+    0,
+    "the question side must keep its masks covered"
+  );
+  back.window.close();
+  front.window.close();
+});
+
 test("a mask can cover rich inline content, not just plain text", () => {
   const dom = runtime();
   const html = dom.window.Quizify.renderMarkdown(

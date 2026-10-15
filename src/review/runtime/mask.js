@@ -5,6 +5,10 @@
  * global counter, ordering or floating control, so revealing one never touches
  * the others. The covered text stays in the DOM (painted transparent) so
  * revealing a phrase never reflows the surrounding line.
+ *
+ * The answer side starts with every mask revealed: once the answer is on screen
+ * there is nothing left to quiz, so the phrase should read normally. The mask
+ * stays clickable, so a reviewer can still cover it again to self-test.
  */
 
 const BOUND_ATTRIBUTE = "data-quizify-mask-bound";
@@ -18,15 +22,17 @@ function setRevealed(element, revealed) {
   element.setAttribute("aria-expanded", String(revealed));
 }
 
-export function initTextMasks({ root } = {}) {
+export function initTextMasks({ root, isBack = null } = {}) {
   const document = root?.document;
   if (!document?.querySelectorAll) return;
+
+  const startRevealed = isBack ?? Boolean(root?.isBack);
 
   document
     .querySelectorAll(`.quizify-mask:not([${BOUND_ATTRIBUTE}])`)
     .forEach((element) => {
       element.setAttribute(BOUND_ATTRIBUTE, "true");
-      setRevealed(element, isRevealed(element));
+      setRevealed(element, startRevealed || isRevealed(element));
 
       const toggle = (event) => {
         event?.preventDefault?.();
